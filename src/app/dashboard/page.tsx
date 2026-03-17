@@ -70,13 +70,13 @@ export default function DashboardPage() {
 
       {/* Charts section */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+        <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">
             Token Usage
           </h3>
           <TokenUsageChart />
         </div>
-        <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+        <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">
             Agent Activity
           </h3>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
       {/* Bottom section */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+        <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-semibold text-[var(--content-primary)]">
               Recent Tasks
@@ -95,7 +95,7 @@ export default function DashboardPage() {
           </div>
           <RecentTasksList tasks={mockTasks.slice(0, 5)} />
         </div>
-        <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+        <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">
             Upcoming Crons
           </h3>

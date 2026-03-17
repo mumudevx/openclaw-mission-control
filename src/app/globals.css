@@ -218,13 +218,25 @@
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04),
                 0 1px 2px -1px rgba(0, 0, 0, 0.03);
   }
+  .dark .shadow-card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3),
+                0 1px 2px -1px rgba(0, 0, 0, 0.2);
+  }
   .shadow-card-hover {
     box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06),
                 0 2px 4px -1px rgba(0, 0, 0, 0.04);
   }
+  .dark .shadow-card-hover {
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.4),
+                0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  }
   .shadow-card-lg {
     box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.08),
                 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+  }
+  .dark .shadow-card-lg {
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.5),
+                0 4px 8px -2px rgba(0, 0, 0, 0.3);
   }
   .rounded-card {
     border-radius: var(--radius-card, 20px);

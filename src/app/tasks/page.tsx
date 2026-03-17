@@ -26,7 +26,7 @@ const priorityColors: Record<string, string> = {
 
 function TaskCard({ task }: { task: Task }) {
   return (
-    <div className="rounded-xl border border-[var(--border-default)] bg-white p-3 shadow-sm transition-shadow hover:shadow-card-hover cursor-grab active:cursor-grabbing">
+    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3 shadow-sm transition-shadow hover:shadow-card-hover cursor-grab active:cursor-grabbing">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-[var(--content-primary)] line-clamp-2">
           {task.title}
@@ -80,10 +80,10 @@ export default function TasksPage() {
             placeholder="Search tasks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-white"
+            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
           />
         </div>
-        <button className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] bg-white px-4 text-sm text-[var(--content-secondary)] hover:bg-[var(--surface-bg)] transition-colors">
+        <button className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-4 text-sm text-[var(--content-secondary)] hover:bg-[var(--surface-bg)] transition-colors">
           <Filter className="h-4 w-4" strokeWidth={1.5} />
           Filter
         </button>

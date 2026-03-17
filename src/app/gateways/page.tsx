@@ -46,7 +46,7 @@ export default function GatewaysPage() {
       <PageHeader title="Gateway" description="Monitor and manage your OpenClaw Gateway connection" />
 
       {/* Status hero */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${isConnected ? "bg-emerald-50" : "bg-red-50"}`}>
@@ -76,7 +76,7 @@ export default function GatewaysPage() {
       </div>
 
       {/* System resources */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <h3 className="mb-6 text-base font-semibold text-[var(--content-primary)]">System Resources</h3>
         <div className="flex items-center justify-around">
           <ResourceGauge label="CPU" value={gw.resources.cpu} max={100} unit="%" />
@@ -108,7 +108,7 @@ export default function GatewaysPage() {
           {mockChannels.map((channel) => (
             <div
               key={channel.id}
-              className="rounded-card border border-[var(--border-default)] bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover"
+              className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-card transition-shadow hover:shadow-card-hover"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export default function GatewaysPage() {
       </div>
 
       {/* Live events */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">Live Events</h3>
         <div className="max-h-64 space-y-2 overflow-y-auto">
           {mockGatewayEvents.slice(0, 10).map((event) => (

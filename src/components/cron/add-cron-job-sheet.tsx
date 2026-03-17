@@ -264,7 +264,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
               <Input
                 id="cron-name"
                 placeholder="e.g., daily-code-review"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("name")}
               />
               {form.formState.errors.name && (
@@ -285,7 +285,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
               <Input
                 id="cron-description"
                 placeholder="e.g., Review all open PRs every morning"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("description")}
               />
             </div>
@@ -305,7 +305,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                     }
                     className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                       scheduleType === type
-                        ? "bg-white text-[var(--content-primary)] shadow-sm"
+                        ? "bg-[var(--surface-card)] text-[var(--content-primary)] shadow-sm"
                         : "text-[var(--content-muted)] hover:text-[var(--content-secondary)]"
                     }`}
                   >
@@ -341,7 +341,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                     type="number"
                     min="1"
                     placeholder="e.g., 30"
-                    className="h-10 rounded-xl border-[var(--border-default)] bg-white flex-1"
+                    className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] flex-1"
                     {...form.register("intervalValue")}
                   />
                   <Select
@@ -353,7 +353,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                       )
                     }
                   >
-                    <SelectTrigger className="w-32 !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                    <SelectTrigger className="w-32 !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -385,7 +385,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                     render={
                       <button
                         type="button"
-                        className="flex h-10 w-full items-center gap-2 rounded-xl border border-[var(--border-default)] bg-white px-3 text-sm transition-colors hover:border-[var(--content-muted)]"
+                        className="flex h-10 w-full items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-sm transition-colors hover:border-[var(--content-muted)]"
                       />
                     }
                   >
@@ -410,7 +410,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                     sideOffset={6}
                     className="w-auto p-0"
                   >
-                    <div className="rounded-xl border border-[var(--border-default)] bg-white shadow-card overflow-hidden">
+                    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-hidden">
                       <Calendar
                         mode="single"
                         selected={runAtDate}
@@ -456,7 +456,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                               }
                             }}
                           >
-                            <SelectTrigger className="w-16 !h-8 rounded-lg border-[var(--border-default)] bg-white text-xs">
+                            <SelectTrigger className="w-16 !h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -487,7 +487,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                               }
                             }}
                           >
-                            <SelectTrigger className="w-16 !h-8 rounded-lg border-[var(--border-default)] bg-white text-xs">
+                            <SelectTrigger className="w-16 !h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -523,7 +523,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                   form.setValue("agentId", val as string, { shouldValidate: true })
                 }
               >
-                <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                   <SelectValue placeholder="Select an agent (optional)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -551,7 +551,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                     }
                     className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                       form.watch("sessionType") === type
-                        ? "bg-white text-[var(--content-primary)] shadow-sm"
+                        ? "bg-[var(--surface-card)] text-[var(--content-primary)] shadow-sm"
                         : "text-[var(--content-muted)] hover:text-[var(--content-secondary)]"
                     }`}
                   >
@@ -573,7 +573,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                 id="cron-prompt"
                 rows={6}
                 placeholder="e.g., Review all open PRs and summarize changes..."
-                className="rounded-xl border-[var(--border-default)] bg-white text-sm"
+                className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] text-sm"
                 {...form.register("prompt")}
               />
               <p className="text-[11px] text-[var(--content-muted)]">
@@ -613,7 +613,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                       value={form.watch("model") || undefined}
                       onValueChange={(val) => form.setValue("model", val as string)}
                     >
-                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                         <SelectValue placeholder="Agent's default model" />
                       </SelectTrigger>
                       <SelectContent>
@@ -645,7 +645,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                         form.setValue("deliveryMode", val as DeliveryMode)
                       }
                     >
-                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -671,7 +671,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                           form.setValue("deliveryChannel", val as string)
                         }
                       >
-                        <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                        <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                           <SelectValue placeholder="Select channel" />
                         </SelectTrigger>
                         <SelectContent>
@@ -700,7 +700,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                       <Input
                         id="cron-webhook-url"
                         placeholder="https://example.com/webhook"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                         {...form.register("webhookUrl")}
                       />
                       <p className="text-[11px] text-[var(--content-muted)]">
@@ -728,7 +728,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                         type="number"
                         min="1"
                         placeholder="e.g., 300"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                         {...form.register("timeout")}
                       />
                       <p className="text-[11px] text-[var(--content-muted)]">
@@ -749,7 +749,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                         type="number"
                         min="0"
                         placeholder="e.g., 3"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                         {...form.register("maxRetries")}
                       />
                       <p className="text-[11px] text-[var(--content-muted)]">
@@ -769,7 +769,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
                         form.setValue("timezone", val as string)
                       }
                     >
-                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-white">
+                      <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                         <SelectValue placeholder="UTC (default)" />
                       </SelectTrigger>
                       <SelectContent>

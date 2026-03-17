@@ -153,7 +153,7 @@ export function AgentChat({ agent }: { agent: Agent }) {
             onKeyDown={handleKeyDown}
             placeholder={`Message ${agent.name}...`}
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-[var(--border-default)] bg-white px-4 py-2.5 text-sm text-[var(--content-primary)] placeholder:text-[var(--content-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)]"
+            className="flex-1 resize-none rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-2.5 text-sm text-[var(--content-primary)] placeholder:text-[var(--content-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)]"
           />
           <button
             type="submit"

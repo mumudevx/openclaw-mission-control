@@ -54,7 +54,7 @@ export default function OfficePage() {
       />
 
       {/* Stats bar */}
-      <div className="flex items-center gap-6 rounded-card border border-[var(--border-default)] bg-white px-6 py-3 shadow-card">
+      <div className="flex items-center gap-6 rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] px-6 py-3 shadow-card">
         <div className="flex items-center gap-2 text-sm">
           <div className="h-2 w-2 rounded-full bg-emerald-400" />
           <span className="text-[var(--content-secondary)]">Active:</span>
@@ -86,7 +86,7 @@ export default function OfficePage() {
       </div>
 
       {/* Pixel office */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white shadow-card overflow-hidden">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-hidden">
         <div className="relative h-[480px] bg-[#F8F6F1]" style={{ imageRendering: "pixelated" }}>
           {/* Floor pattern */}
           <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -130,7 +130,7 @@ export default function OfficePage() {
                 {/* Activity bubble */}
                 {agent.status === "active" && (
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 animate-bounce">
-                    <div className="rounded-lg bg-white px-2 py-1 text-[9px] font-medium text-[var(--content-secondary)] shadow-md border border-[var(--border-default)]">
+                    <div className="rounded-lg bg-[var(--surface-card)] px-2 py-1 text-[9px] font-medium text-[var(--content-secondary)] shadow-md border border-[var(--border-default)]">
                       Working...
                     </div>
                   </div>

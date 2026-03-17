@@ -80,7 +80,7 @@ export function CronExpressionBuilder({
           render={
             <button
               type="button"
-              className="flex h-10 w-full items-center rounded-xl border border-[var(--border-default)] bg-white px-3 text-sm transition-colors hover:border-[var(--content-muted)] text-left"
+              className="flex h-10 w-full items-center rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-sm transition-colors hover:border-[var(--content-muted)] text-left"
             />
           }
         >
@@ -100,7 +100,7 @@ export function CronExpressionBuilder({
           sideOffset={6}
           className="w-[360px] p-0"
         >
-          <div className="rounded-xl border border-[var(--border-default)] bg-white shadow-card overflow-hidden">
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-[var(--border-divider)]">
               <button
@@ -160,7 +160,7 @@ export function CronExpressionBuilder({
                       value={minute}
                       onValueChange={(val) => setMinute(val as string)}
                     >
-                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-white text-xs px-1.5">
+                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs px-1.5">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -187,7 +187,7 @@ export function CronExpressionBuilder({
                       value={hour}
                       onValueChange={(val) => setHour(val as string)}
                     >
-                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-white text-xs px-1.5">
+                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs px-1.5">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -212,7 +212,7 @@ export function CronExpressionBuilder({
                     <Input
                       value={dayOfMonth}
                       onChange={(e) => setDayOfMonth(e.target.value)}
-                      className="h-8 rounded-lg border-[var(--border-default)] bg-white text-xs px-1.5 text-center"
+                      className="h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs px-1.5 text-center"
                     />
                   </div>
 
@@ -224,7 +224,7 @@ export function CronExpressionBuilder({
                     <Input
                       value={month}
                       onChange={(e) => setMonth(e.target.value)}
-                      className="h-8 rounded-lg border-[var(--border-default)] bg-white text-xs px-1.5 text-center"
+                      className="h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs px-1.5 text-center"
                     />
                   </div>
 
@@ -237,7 +237,7 @@ export function CronExpressionBuilder({
                       value={dayOfWeek}
                       onValueChange={(val) => setDayOfWeek(val as string)}
                     >
-                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-white text-xs px-1.5">
+                      <SelectTrigger className="w-full h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs px-1.5">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -289,7 +289,7 @@ export function CronExpressionBuilder({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="e.g., 0 9 * * 1-5"
-                className="h-8 rounded-lg border-[var(--border-default)] bg-white font-mono text-xs"
+                className="h-8 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-xs"
               />
             </div>
           </div>

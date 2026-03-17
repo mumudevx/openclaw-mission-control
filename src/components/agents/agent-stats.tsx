@@ -17,7 +17,7 @@ const sessionStatusMap: Record<
 
 function MiniStatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[var(--border-default)] bg-white p-4">
+    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
       <p className="text-[11px] text-[var(--content-muted)]">{label}</p>
       <p className="mt-1 text-lg font-semibold text-[var(--content-primary)]">
         {value}
@@ -74,7 +74,7 @@ export function AgentStats({ agent }: { agent: Agent }) {
               return (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-white p-3"
+                  className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3"
                 >
                   <div className="flex items-center gap-3">
                     <StatusBadge

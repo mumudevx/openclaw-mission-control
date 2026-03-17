@@ -212,7 +212,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               <Input
                 id="name"
                 placeholder="e.g., ResearchBot"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("name")}
               />
               {form.formState.errors.name && (
@@ -235,7 +235,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                   })
                 }
               >
-                <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-white">
+                <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,7 +264,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               <Input
                 id="description"
                 placeholder="e.g., Autonomous research assistant for web scraping and summarization"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("description")}
               />
             </div>
@@ -280,7 +280,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               <Input
                 id="avatar"
                 placeholder="e.g., 🤖"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("avatar")}
               />
             </div>
@@ -296,7 +296,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               <Input
                 id="vibe"
                 placeholder="e.g., Calm, precise, slightly formal"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("vibe")}
               />
               <p className="text-[11px] text-[var(--content-muted)]">
@@ -315,7 +315,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               <Textarea
                 id="soul"
                 rows={6}
-                className="rounded-xl border-[var(--border-default)] bg-white font-mono text-sm"
+                className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
                 {...form.register("soul")}
               />
               <p className="text-[11px] text-[var(--content-muted)]">
@@ -363,7 +363,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                     <Textarea
                       id="userMd"
                       rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-white font-mono text-sm"
+                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
                       {...form.register("workspace.userMd")}
                     />
                     <p className="text-[11px] text-[var(--content-muted)]">
@@ -383,7 +383,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                     <Textarea
                       id="agentsMd"
                       rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-white font-mono text-sm"
+                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
                       {...form.register("workspace.agentsMd")}
                     />
                     <p className="text-[11px] text-[var(--content-muted)]">
@@ -403,7 +403,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                     <Textarea
                       id="toolsMd"
                       rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-white font-mono text-sm"
+                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
                       {...form.register("workspace.toolsMd")}
                     />
                     <p className="text-[11px] text-[var(--content-muted)]">
@@ -432,7 +432,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                           )
                         }
                       >
-                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-white">
+                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -461,7 +461,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                           )
                         }
                       >
-                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-white">
+                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -493,7 +493,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                     <Input
                       id="fallbackModels"
                       placeholder="e.g., gpt-4, claude-3-sonnet"
-                      className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                      className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                       {...form.register("fallbackModels")}
                     />
                     <p className="text-[11px] text-[var(--content-muted)]">
@@ -514,7 +514,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                       <Input
                         id="heartbeatInterval"
                         placeholder="e.g., 30m"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                         {...form.register("heartbeat.interval")}
                       />
                       <p className="text-[11px] text-[var(--content-muted)]">
@@ -534,7 +534,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                       <Input
                         id="heartbeatTarget"
                         placeholder="e.g., #general"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-white"
+                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                         {...form.register("heartbeat.target")}
                       />
                       <p className="text-[11px] text-[var(--content-muted)]">
@@ -567,7 +567,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                               )
                             }
                           >
-                            <SelectTrigger className="w-full h-9 rounded-lg border-[var(--border-default)] bg-white text-xs">
+                            <SelectTrigger className="w-full h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs">
                               <SelectValue placeholder="Channel" />
                             </SelectTrigger>
                             <SelectContent>
@@ -580,12 +580,12 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
                           </Select>
                           <Input
                             placeholder="Account ID"
-                            className="h-9 rounded-lg border-[var(--border-default)] bg-white text-xs"
+                            className="h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs"
                             {...form.register(`bindings.${index}.accountId`)}
                           />
                           <Input
                             placeholder="Peer ID"
-                            className="h-9 rounded-lg border-[var(--border-default)] bg-white text-xs"
+                            className="h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs"
                             {...form.register(`bindings.${index}.peerId`)}
                           />
                         </div>

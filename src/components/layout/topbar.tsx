@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, Search, Settings, LogOut, Bot, AlertTriangle, Radio, CheckCircle } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Bot, AlertTriangle, Radio, CheckCircle, Sun, Moon } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -49,11 +50,13 @@ const mockNotifications = [
 
 export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
   const router = useRouter();
+  const theme = useUIStore((s) => s.theme);
+  const toggleTheme = useUIStore((s) => s.toggleTheme);
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
 
   return (
     <header
-      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border-default)] bg-white/80 backdrop-blur-sm px-6 transition-all duration-250"
+      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border-default)] bg-[var(--surface-card)]/80 backdrop-blur-sm px-6 transition-all duration-250"
       style={{ left: sidebarCollapsed ? 64 : 240 }}
     >
       {/* Search */}
@@ -69,6 +72,19 @@ export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
 
       {/* Right section */}
       <div className="flex items-center gap-3">
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-default)] bg-transparent hover:bg-[var(--surface-bg)] transition-colors"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-[18px] w-[18px] text-[var(--content-secondary)]" strokeWidth={1.5} />
+          ) : (
+            <Moon className="h-[18px] w-[18px] text-[var(--content-secondary)]" strokeWidth={1.5} />
+          )}
+        </button>
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger

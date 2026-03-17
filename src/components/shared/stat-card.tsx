@@ -21,7 +21,7 @@ export function StatCard({ icon: Icon, label, value, trend, className }: StatCar
   return (
     <div
       className={cn(
-        "rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover",
+        "rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card transition-shadow hover:shadow-card-hover",
         className
       )}
     >

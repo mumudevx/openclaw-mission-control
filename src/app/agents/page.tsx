@@ -21,7 +21,7 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
   };
 
   return (
-    <div onClick={onClick} className="rounded-card border border-[var(--border-default)] bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover cursor-pointer">
+    <div onClick={onClick} className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-card transition-shadow hover:shadow-card-hover cursor-pointer">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-light)]">
@@ -116,10 +116,10 @@ export default function AgentsPage() {
             placeholder="Search agents..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-white"
+            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
           />
         </div>
-        <div className="flex rounded-xl border border-[var(--border-default)] bg-white">
+        <div className="flex rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)]">
           <button
             onClick={() => setViewMode("grid")}
             className={`flex h-10 w-10 items-center justify-center rounded-l-xl transition-colors ${viewMode === "grid" ? "bg-[var(--accent-light)] text-[var(--accent-primary)]" : "text-[var(--content-muted)]"}`}

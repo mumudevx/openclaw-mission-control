@@ -2,14 +2,19 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { useUIStore } from "@/stores/uiStore";
 
 export default function SettingsPage() {
+  const theme = useUIStore((s) => s.theme);
+  const toggleTheme = useUIStore((s) => s.toggleTheme);
+
   return (
     <div className="space-y-6 max-w-2xl">
       <PageHeader title="Settings" description="Configure your Mission Control preferences" />
 
       {/* Gateway connection */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <h3 className="text-base font-semibold text-[var(--content-primary)]">Gateway Connection</h3>
         <p className="mt-1 text-sm text-[var(--content-secondary)]">Configure the OpenClaw Gateway connection</p>
         <div className="mt-4 space-y-4">
@@ -31,22 +36,22 @@ export default function SettingsPage() {
       </div>
 
       {/* Appearance */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <h3 className="text-base font-semibold text-[var(--content-primary)]">Appearance</h3>
         <p className="mt-1 text-sm text-[var(--content-secondary)]">Customize the look and feel</p>
         <div className="mt-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[var(--content-primary)]">Dark Mode</p>
-              <p className="text-xs text-[var(--content-muted)]">Coming soon</p>
+              <p className="text-xs text-[var(--content-muted)]">Switch between light and dark theme</p>
             </div>
-            <div className="h-6 w-11 rounded-full bg-[var(--border-default)] opacity-50 cursor-not-allowed" />
+            <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
           </div>
         </div>
       </div>
 
       {/* Notifications */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white p-6 shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
         <h3 className="text-base font-semibold text-[var(--content-primary)]">Notifications</h3>
         <p className="mt-1 text-sm text-[var(--content-secondary)]">Manage notification preferences</p>
         <div className="mt-4 space-y-3">

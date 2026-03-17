@@ -69,7 +69,7 @@ export default function LogsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Logs" description="Real-time system log viewer">
-        <button className="flex items-center gap-2 rounded-btn border border-[var(--border-default)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]">
+        <button className="flex items-center gap-2 rounded-btn border border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-2.5 text-sm font-medium text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]">
           <Download className="h-4 w-4" strokeWidth={1.5} />
           Export
         </button>
@@ -83,7 +83,7 @@ export default function LogsPage() {
             placeholder="Search logs (supports regex)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-white font-mono text-sm"
+            className="pl-9 h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function LogsPage() {
 
         <button
           onClick={() => setAutoScroll(!autoScroll)}
-          className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] bg-white px-3 text-sm text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]"
+          className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-sm text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]"
         >
           {autoScroll ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
           {autoScroll ? "Pause" : "Resume"}

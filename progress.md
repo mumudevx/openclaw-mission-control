@@ -25,7 +25,7 @@
 ## Phase 3: Secondary Pages
 - [x] Cron Jobs (/cron) - stats, job list with actions
 - [x] Logs Page (/logs) - terminal-like viewer, level filters, search
-- [x] Calendar (/calendar) - month view, event dots, navigation
+- [x] Calendar (/calendar) - month/week/day views, event positioning, today button, view-aware navigation
 - [x] Team Office (/office) - pixel-style virtual office with agent sprites
 - [x] Settings (/settings) - gateway config, appearance, notifications
 

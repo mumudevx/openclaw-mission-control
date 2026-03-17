@@ -2,35 +2,53 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { PageHeader } from "@/components/shared/page-header";
 import { mockCalendarEvents } from "@/lib/mock/data";
-import type { EventType } from "@/types";
+import { MonthView } from "@/components/calendar/month-view";
+import { WeekView } from "@/components/calendar/week-view";
+import { DayView } from "@/components/calendar/day-view";
+import { WEEK_STARTS_ON } from "@/components/calendar/constants";
 
-const eventTypeColors: Record<EventType, string> = {
-  cron: "bg-blue-500",
-  task_deadline: "bg-[var(--accent-primary)]",
-  user_event: "bg-purple-500",
-  agent_task: "bg-emerald-500",
-  milestone: "bg-amber-500",
-};
+type View = "month" | "week" | "day";
+
+function getHeaderTitle(view: View, date: Date): string {
+  switch (view) {
+    case "month":
+      return format(date, "MMMM yyyy");
+    case "week": {
+      const ws = startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
+      const we = endOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
+      return `${format(ws, "MMM d")} – ${format(we, "MMM d, yyyy")}`;
+    }
+    case "day":
+      return format(date, "EEEE, MMMM d, yyyy");
+  }
+}
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day">("month");
-
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const [view, setView] = useState<View>("month");
   const events = mockCalendarEvents;
 
-  const getEventsForDay = (day: Date) =>
-    events.filter((e) => isSameDay(new Date(e.startDate), day));
+  const navigate = (direction: 1 | -1) => {
+    switch (view) {
+      case "month":
+        setCurrentDate((d) => (direction === 1 ? addMonths(d, 1) : subMonths(d, 1)));
+        break;
+      case "week":
+        setCurrentDate((d) => (direction === 1 ? addWeeks(d, 1) : subWeeks(d, 1)));
+        break;
+      case "day":
+        setCurrentDate((d) => (direction === 1 ? addDays(d, 1) : subDays(d, 1)));
+        break;
+    }
+  };
 
-  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  const handleDayClick = (day: Date) => {
+    setCurrentDate(day);
+    setView("day");
+  };
 
   return (
     <div className="space-y-6">
@@ -41,18 +59,29 @@ export default function CalendarPage() {
         </button>
       </PageHeader>
 
-      {/* Calendar header */}
-      <div className="rounded-card border border-[var(--border-default)] bg-white shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card">
         <div className="flex items-center justify-between border-b border-[var(--border-default)] px-6 py-4">
           <div className="flex items-center gap-4">
-            <button onClick={prevMonth} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[var(--surface-bg)] transition-colors">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[var(--surface-bg)] transition-colors"
+            >
               <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
             </button>
             <h2 className="text-lg font-semibold text-[var(--content-primary)]">
-              {format(currentDate, "MMMM yyyy")}
+              {getHeaderTitle(view, currentDate)}
             </h2>
-            <button onClick={nextMonth} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[var(--surface-bg)] transition-colors">
+            <button
+              onClick={() => navigate(1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[var(--surface-bg)] transition-colors"
+            >
               <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              className="ml-2 rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs font-medium text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]"
+            >
+              Today
             </button>
           </div>
           <div className="flex rounded-xl border border-[var(--border-default)]">
@@ -72,60 +101,9 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Calendar grid */}
-        <div className="p-4">
-          {/* Day headers */}
-          <div className="mb-2 grid grid-cols-7 text-center">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="py-2 text-xs font-medium uppercase text-[var(--content-muted)]">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-px rounded-xl bg-[var(--border-default)] overflow-hidden">
-            {days.map((day) => {
-              const dayEvents = getEventsForDay(day);
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={`min-h-[100px] bg-white p-2 ${
-                    !isSameMonth(day, currentDate) ? "opacity-40" : ""
-                  }`}
-                >
-                  <span
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm ${
-                      isToday(day)
-                        ? "bg-[var(--accent-primary)] text-white font-medium"
-                        : "text-[var(--content-primary)]"
-                    }`}
-                  >
-                    {format(day, "d")}
-                  </span>
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
-                      <div
-                        key={event.id}
-                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${eventTypeColors[event.type]} bg-opacity-10`}
-                      >
-                        <div className={`h-1.5 w-1.5 rounded-full ${eventTypeColors[event.type]}`} />
-                        <span className="truncate text-[10px] font-medium text-[var(--content-primary)]">
-                          {event.title}
-                        </span>
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <span className="text-[10px] text-[var(--content-muted)] pl-1">
-                        +{dayEvents.length - 2} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {view === "month" && <MonthView currentDate={currentDate} events={events} onDayClick={handleDayClick} />}
+        {view === "week" && <WeekView currentDate={currentDate} events={events} onDayClick={handleDayClick} />}
+        {view === "day" && <DayView currentDate={currentDate} events={events} />}
       </div>
     </div>
   );

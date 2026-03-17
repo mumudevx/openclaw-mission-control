@@ -16,7 +16,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
     <Popover>
       <PopoverTrigger
         render={
-          <button className="flex h-9 items-center gap-2 rounded-lg border border-[var(--border-default)] bg-white px-3 text-sm transition-colors hover:border-[var(--content-muted)] min-w-[140px]" />
+          <button className="flex h-9 items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-sm transition-colors hover:border-[var(--content-muted)] min-w-[140px]" />
         }
       >
         <CalendarDays className="h-4 w-4 text-[var(--content-muted)]" strokeWidth={1.5} />
@@ -29,7 +29,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
           mode="single"
           selected={value}
           onSelect={onChange}
-          className="rounded-xl border border-[var(--border-default)] bg-white shadow-card"
+          className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card"
         />
       </PopoverContent>
     </Popover>
