@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,85 +45,191 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* OpenClaw custom design tokens for Tailwind utility access */
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+  --color-surface-bg: var(--surface-bg);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-alt: var(--surface-card-alt);
+  --color-content-primary: var(--content-primary);
+  --color-content-secondary: var(--content-secondary);
+  --color-content-muted: var(--content-muted);
+  --color-border-default: var(--border-default);
+  --color-border-divider: var(--border-divider);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
 }
+
+/* ==========================================================================
+   OpenClaw Design System — Light Mode (default)
+   ========================================================================== */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  /* --- shadcn variable overrides mapped to OpenClaw tokens (hex) --- */
+  --background: #F5F5F0;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #E8654A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FAFAF8;
+  --secondary-foreground: #1A1A1A;
+  --muted: #F0F0EC;
+  --muted-foreground: #6B6B6B;
+  --accent: #FDF0ED;
+  --accent-foreground: #1A1A1A;
+  --destructive: #EA4335;
+  --border: #E8E8E4;
+  --input: #E8E8E4;
+  --ring: #E8654A;
+  --chart-1: #E8654A;
+  --chart-2: #1A1A1A;
+  --chart-3: #F0C4B8;
+  --chart-4: #FDE8E0;
+  --chart-5: #6B6B6B;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #E8654A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FDF0ED;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E8E8E4;
+  --sidebar-ring: #E8654A;
+
+  /* --- OpenClaw custom design tokens --- */
+  --accent-primary: #E8654A;
+  --accent-hover: #D4553A;
+  --accent-light: #FDF0ED;
+  --surface-bg: #F5F5F0;
+  --surface-card: #FFFFFF;
+  --surface-card-alt: #FAFAF8;
+  --content-primary: #1A1A1A;
+  --content-secondary: #6B6B6B;
+  --content-muted: #9B9B9B;
+  --border-default: #E8E8E4;
+  --border-divider: #F0F0EC;
+  --status-success: #34A853;
+  --status-warning: #FBBC04;
+  --status-error: #EA4335;
+  --status-info: #4285F4;
+
+  /* --- Radius tokens --- */
+  --radius-card: 20px;
+  --radius-button: 24px;
 }
 
+/* ==========================================================================
+   OpenClaw Design System — Dark Mode
+   ========================================================================== */
+
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* --- shadcn variable overrides mapped to OpenClaw dark tokens (hex) --- */
+  --background: #0F0F0F;
+  --foreground: #F5F5F0;
+  --card: #1A1A1A;
+  --card-foreground: #F5F5F0;
+  --popover: #1A1A1A;
+  --popover-foreground: #F5F5F0;
+  --primary: #E8654A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #2A2A2A;
+  --secondary-foreground: #F5F5F0;
+  --muted: #2A2A2A;
+  --muted-foreground: #9B9B9B;
+  --accent: #2A2A2A;
+  --accent-foreground: #F5F5F0;
+  --destructive: #EA4335;
+  --border: #2A2A2A;
+  --input: #2A2A2A;
+  --ring: #E8654A;
+  --chart-1: #E8654A;
+  --chart-2: #F5F5F0;
+  --chart-3: #F0C4B8;
+  --chart-4: #FDE8E0;
+  --chart-5: #9B9B9B;
+  --sidebar: #1A1A1A;
+  --sidebar-foreground: #F5F5F0;
+  --sidebar-primary: #E8654A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2A2A2A;
+  --sidebar-accent-foreground: #F5F5F0;
+  --sidebar-border: #2A2A2A;
+  --sidebar-ring: #E8654A;
+
+  /* --- OpenClaw custom design tokens (dark) --- */
+  --accent-primary: #E8654A;
+  --accent-hover: #D4553A;
+  --accent-light: #2A1A16;
+  --surface-bg: #0F0F0F;
+  --surface-card: #1A1A1A;
+  --surface-card-alt: #222222;
+  --content-primary: #F5F5F0;
+  --content-secondary: #9B9B9B;
+  --content-muted: #6B6B6B;
+  --border-default: #2A2A2A;
+  --border-divider: #222222;
+  --status-success: #34A853;
+  --status-warning: #FBBC04;
+  --status-error: #EA4335;
+  --status-info: #4285F4;
 }
+
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button,
+  [role="button"],
+  a[href] {
+    cursor: pointer;
+  }
+  /* Remove focus outlines from chart SVG elements */
+  .recharts-wrapper *:focus,
+  .recharts-wrapper *:active {
+    outline: none;
+  }
+}
+
+/* ==========================================================================
+   Card shadow utilities
+   ========================================================================== */
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04),
+                0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06),
+                0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  }
+  .shadow-card-lg {
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.08),
+                0 4px 8px -2px rgba(0, 0, 0, 0.04);
+  }
+  .rounded-card {
+    border-radius: var(--radius-card, 20px);
+  }
+  .rounded-btn {
+    border-radius: var(--radius-button, 24px);
   }
 }
