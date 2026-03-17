@@ -49,7 +49,7 @@ function TaskCard({ task }: { task: Task }) {
 
       <div className="mt-3 flex items-center justify-between text-[11px] text-[var(--content-muted)]">
         <span>{task.assigneeId ? "Assigned" : "Unassigned"}</span>
-        {task.dueDate && <span>Due {new Date(task.dueDate).toLocaleDateString()}</span>}
+        {task.dueDate && <span suppressHydrationWarning>Due {new Date(task.dueDate).toLocaleDateString()}</span>}
       </div>
     </div>
   );

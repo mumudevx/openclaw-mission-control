@@ -29,7 +29,7 @@ export function UpcomingCrons({ jobs }: UpcomingCronsProps) {
           <div className="text-right">
             <StatusBadge status={job.status === "active" ? "active" : "paused"} />
             {job.nextRun && (
-              <p className="mt-1 text-[11px] text-[var(--content-muted)]">
+              <p className="mt-1 text-[11px] text-[var(--content-muted)]" suppressHydrationWarning>
                 Next: {new Date(job.nextRun).toLocaleTimeString()}
               </p>
             )}

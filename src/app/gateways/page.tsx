@@ -141,7 +141,7 @@ export default function GatewaysPage() {
             >
               <Activity className="h-3.5 w-3.5 shrink-0 text-[var(--accent-primary)]" strokeWidth={1.5} />
               <span className="flex-1 text-[var(--content-primary)]">{event.message}</span>
-              <span className="shrink-0 text-xs text-[var(--content-muted)]">
+              <span className="shrink-0 text-xs text-[var(--content-muted)]" suppressHydrationWarning>
                 {new Date(event.timestamp).toLocaleTimeString()}
               </span>
             </div>

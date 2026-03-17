@@ -31,7 +31,7 @@ export function RecentTasksList({ tasks }: RecentTasksListProps) {
             </p>
             <p className="mt-0.5 text-xs text-[var(--content-muted)]">
               {task.assigneeId ? `Assigned` : "Unassigned"}
-              {task.dueDate && ` · Due ${new Date(task.dueDate).toLocaleDateString()}`}
+              {task.dueDate && <span suppressHydrationWarning>{` · Due ${new Date(task.dueDate).toLocaleDateString()}`}</span>}
             </p>
           </div>
           <StatusBadge
