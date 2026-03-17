@@ -21,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useNotificationStore } from "@/stores/notificationStore";
 import type { EventType } from "@/types";
 
 const eventSchema = z.object({
@@ -69,9 +71,11 @@ export function AddEventSheet({ open, onOpenChange, defaultDate }: AddEventSheet
 
   const allDay = form.watch("allDay");
 
+  const addNotification = useNotificationStore((s) => s.addNotification);
+
   const onSubmit = (data: EventFormValues) => {
-    // Mock submit — just close for now
-    console.log("New event:", data);
+    toast.success(`Event "${data.title}" created`);
+    addNotification({ type: "success", title: `Event "${data.title}" created`, message: `${data.startDate} ${data.allDay ? "(all day)" : data.startTime}` });
     form.reset();
     onOpenChange(false);
   };

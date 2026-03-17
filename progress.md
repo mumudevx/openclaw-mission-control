@@ -33,7 +33,7 @@
 - [ ] Responsive design (mobile-first adjustments)
 - [x] Dark mode - theme provider, CSS variables, topbar/settings toggle, bg-white cleanup
 - [x] Command palette (Cmd+K) - already implemented with page navigation
-- [ ] Notification system
+- [x] Notification system - Zustand store, topbar dropdown with real data, toast + store integration on form submits
 - [x] Performance optimization - dynamic imports for sheets/charts/canvas, memoized log generation
 - [x] @dnd-kit drag & drop integration in Kanban - cross-column drag, reorder, drag overlay
 - [x] Agent detail drawer/sheet - chat, activity, stats, config tabs

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarDays, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { useNotificationStore } from "@/stores/notificationStore";
 import {
   Sheet,
   SheetContent,
@@ -220,6 +221,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
 
     addJob(newJob);
     toast.success("Cron job created successfully");
+    useNotificationStore.getState().addNotification({ type: "success", title: "Cron job created", message: newJob.name });
     handleClose(false);
   }
 

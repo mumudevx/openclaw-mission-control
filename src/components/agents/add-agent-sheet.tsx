@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useNotificationStore } from "@/stores/notificationStore";
 import {
   Sheet,
   SheetContent,
@@ -168,6 +169,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
 
     addAgent(newAgent);
     toast.success("Agent created successfully");
+    useNotificationStore.getState().addNotification({ type: "success", title: "Agent created", message: newAgent.name });
     handleClose(false);
   }
 

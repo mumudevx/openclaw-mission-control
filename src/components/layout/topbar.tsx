@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, Search, Settings, LogOut, Bot, AlertTriangle, Radio, CheckCircle, Sun, Moon } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Sun, Moon, CheckCircle2, AlertTriangle, Info, AlertOctagon, X } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
+import { useNotificationStore, type NotificationType } from "@/stores/notificationStore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,42 +18,40 @@ interface TopBarProps {
   onSearchClick: () => void;
 }
 
-const mockNotifications = [
-  {
-    id: 1,
-    icon: Bot,
-    message: "Agent ResearchBot completed task",
-    time: "2m ago",
-    read: false,
-  },
-  {
-    id: 2,
-    icon: AlertTriangle,
-    message: "Cron job Daily Report failed",
-    time: "15m ago",
-    read: false,
-  },
-  {
-    id: 3,
-    icon: Radio,
-    message: "Gateway reconnected successfully",
-    time: "1h ago",
-    read: false,
-  },
-  {
-    id: 4,
-    icon: CheckCircle,
-    message: "System backup completed",
-    time: "3h ago",
-    read: true,
-  },
-];
+const typeIcons: Record<NotificationType, typeof CheckCircle2> = {
+  success: CheckCircle2,
+  error: AlertOctagon,
+  warning: AlertTriangle,
+  info: Info,
+};
+
+const typeColors: Record<NotificationType, string> = {
+  success: "text-[var(--status-success)]",
+  error: "text-[var(--status-error)]",
+  warning: "text-[var(--status-warning)]",
+  info: "text-[var(--status-info)]",
+};
+
+function formatRelativeTime(timestamp: string): string {
+  const diff = Date.now() - new Date(timestamp).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
   const router = useRouter();
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
-  const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const notifications = useNotificationStore((s) => s.notifications);
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const dismiss = useNotificationStore((s) => s.dismiss);
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <header
@@ -100,33 +99,78 @@ export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={8} className="w-80 pt-1">
-            <div className="px-3 pt-2 pb-2 text-sm font-semibold text-[var(--accent-primary)]">
-              Notifications
+            <div className="flex items-center justify-between px-3 pt-2 pb-2">
+              <span className="text-sm font-semibold text-[var(--accent-primary)]">
+                Notifications
+              </span>
+              {unreadCount > 0 && (
+                <span className="text-[10px] font-medium text-[var(--content-muted)] bg-[var(--surface-bg)] px-1.5 py-0.5 rounded-full">
+                  {unreadCount} new
+                </span>
+              )}
             </div>
             <DropdownMenuSeparator />
-            {mockNotifications.map((notification) => {
-              const Icon = notification.icon;
-              return (
-                <DropdownMenuItem key={notification.id} className="flex items-start gap-3 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-bg)]">
-                    <Icon className="h-4 w-4 text-[var(--content-secondary)]" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${notification.read ? "text-[var(--content-muted)]" : "text-[var(--content-primary)] font-medium"}`}>
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-[var(--content-muted)]">{notification.time}</p>
-                  </div>
-                  {!notification.read && (
-                    <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--accent-primary)]" />
-                  )}
+            {notifications.length === 0 ? (
+              <div className="px-3 py-6 text-center text-sm text-[var(--content-muted)]">
+                No notifications
+              </div>
+            ) : (
+              <div className="max-h-[320px] overflow-y-auto">
+                {notifications.slice(0, 10).map((notification) => {
+                  const Icon = typeIcons[notification.type];
+                  const color = typeColors[notification.type];
+                  return (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      className="flex items-start gap-3 px-3 py-2.5"
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-bg)]">
+                        <Icon className={`h-4 w-4 ${color}`} strokeWidth={1.5} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${notification.read ? "text-[var(--content-muted)]" : "text-[var(--content-primary)] font-medium"}`}>
+                          {notification.title}
+                        </p>
+                        {notification.message && (
+                          <p className="text-xs text-[var(--content-muted)] truncate">
+                            {notification.message}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-[var(--content-muted)] mt-0.5">
+                          {formatRelativeTime(notification.timestamp)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!notification.read && (
+                          <div className="h-2 w-2 rounded-full bg-[var(--accent-primary)]" />
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismiss(notification.id);
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-bg)] transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="h-3 w-3" strokeWidth={1.5} />
+                        </button>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </div>
+            )}
+            {notifications.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="justify-center text-xs text-[var(--accent-primary)] font-medium"
+                  onClick={markAllAsRead}
+                >
+                  Mark all as read
                 </DropdownMenuItem>
-              );
-            })}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-xs text-[var(--accent-primary)] font-medium">
-              Mark all as read
-            </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
