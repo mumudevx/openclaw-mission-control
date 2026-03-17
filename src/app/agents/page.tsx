@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Bot, Grid3X3, List, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
 import { AgentDetailSheet } from "@/components/agents/agent-detail-sheet";
+import { AddAgentSheet } from "@/components/agents/add-agent-sheet";
+import { useAgentStore } from "@/stores/agentStore";
 import { mockAgents } from "@/lib/mock/data";
 import type { Agent } from "@/types";
 
@@ -67,8 +69,17 @@ export default function AgentsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [addAgentOpen, setAddAgentOpen] = useState(false);
 
-  const agents = mockAgents;
+  const { agents, setAgents } = useAgentStore();
+
+  const initialized = useRef(false);
+  React.useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true;
+      setAgents(mockAgents);
+    }
+  }, [setAgents]);
   const filtered = agents.filter(
     (a) => a.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -80,7 +91,10 @@ export default function AgentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Agents" description="Manage and monitor your AI agents">
-        <button className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <button
+          onClick={() => setAddAgentOpen(true)}
+          className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+        >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
           Add Agent
         </button>
@@ -134,6 +148,11 @@ export default function AgentsPage() {
         onOpenChange={(open) => {
           if (!open) setSelectedAgent(null);
         }}
+      />
+
+      <AddAgentSheet
+        open={addAgentOpen}
+        onOpenChange={setAddAgentOpen}
       />
     </div>
   );

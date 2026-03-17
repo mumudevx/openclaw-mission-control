@@ -8,6 +8,13 @@ export type {
   ChatMessage,
   ActivityType,
   AgentActivity,
+  SandboxMode,
+  SandboxScope,
+  BindingChannel,
+  AgentWorkspaceFiles,
+  AgentSandbox,
+  AgentHeartbeat,
+  AgentBinding,
 } from './agent';
 
 export type {

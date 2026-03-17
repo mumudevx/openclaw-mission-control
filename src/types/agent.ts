@@ -20,6 +20,13 @@ export interface Agent {
   tasks: string[];
   createdAt: string;
   updatedAt: string;
+  vibe?: string;
+  soul?: string;
+  workspace?: AgentWorkspaceFiles;
+  sandbox?: AgentSandbox;
+  fallbackModels?: string[];
+  heartbeat?: AgentHeartbeat;
+  bindings?: AgentBinding[];
 }
 
 export type AgentSessionStatus = 'active' | 'idle' | 'completed' | 'error';
@@ -51,4 +58,30 @@ export interface AgentActivity {
   description: string;
   timestamp: string;
   metadata?: Record<string, string>;
+}
+
+export type SandboxMode = 'off' | 'non-main' | 'all';
+export type SandboxScope = 'session' | 'agent' | 'shared';
+export type BindingChannel = 'whatsapp' | 'discord' | 'slack' | 'telegram' | 'imessage';
+
+export interface AgentWorkspaceFiles {
+  userMd?: string;
+  agentsMd?: string;
+  toolsMd?: string;
+}
+
+export interface AgentSandbox {
+  mode: SandboxMode;
+  scope: SandboxScope;
+}
+
+export interface AgentHeartbeat {
+  interval?: string;
+  target?: string;
+}
+
+export interface AgentBinding {
+  channel: BindingChannel;
+  accountId?: string;
+  peerId?: string;
 }
