@@ -1,14 +1,27 @@
 "use client";
 
+import React, { useState, useRef } from "react";
 import { Clock, Play, Pause, Trash2, Plus, Timer, AlertCircle, CheckCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CronBadge } from "@/components/shared/cron-badge";
+import { AddCronJobSheet } from "@/components/cron/add-cron-job-sheet";
+import { useCronStore } from "@/stores/cronStore";
 import { mockCronJobs } from "@/lib/mock/data";
 
 export default function CronPage() {
-  const jobs = mockCronJobs;
+  const [addJobOpen, setAddJobOpen] = useState(false);
+  const { jobs, setJobs } = useCronStore();
+
+  const initialized = useRef(false);
+  React.useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true;
+      setJobs(mockCronJobs);
+    }
+  }, [setJobs]);
+
   const activeCount = jobs.filter((j) => j.status === "active").length;
   const runningCount = jobs.filter((j) => j.status === "running").length;
   const failedCount = jobs.filter((j) => j.status === "failed").length;
@@ -16,7 +29,10 @@ export default function CronPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Cron Jobs" description="Schedule and manage automated tasks">
-        <button className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <button
+          onClick={() => setAddJobOpen(true)}
+          className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+        >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
           New Job
         </button>
@@ -93,6 +109,8 @@ export default function CronPage() {
           })}
         </div>
       </div>
+
+      <AddCronJobSheet open={addJobOpen} onOpenChange={setAddJobOpen} />
     </div>
   );
 }

@@ -38,6 +38,10 @@ export type {
 export type {
   CronStatus,
   CronRunStatus,
+  ScheduleType,
+  SessionTarget,
+  DeliveryMode,
+  DeliveryChannel,
   CronJob,
   CronRun,
 } from './cron';

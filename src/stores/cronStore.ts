@@ -6,6 +6,7 @@ interface CronState {
   runs: CronRun[];
   selectedJobId: string | null;
 
+  setJobs: (jobs: CronJob[]) => void;
   addJob: (job: CronJob) => void;
   updateJob: (id: string, updates: Partial<CronJob>) => void;
   removeJob: (id: string) => void;
@@ -17,6 +18,8 @@ export const useCronStore = create<CronState>((set) => ({
   jobs: [],
   runs: [],
   selectedJobId: null,
+
+  setJobs: (jobs) => set({ jobs }),
 
   addJob: (job) =>
     set((state) => ({ jobs: [...state.jobs, job] })),

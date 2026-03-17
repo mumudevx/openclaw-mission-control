@@ -2,6 +2,14 @@ export type CronStatus = 'active' | 'paused' | 'running' | 'failed';
 
 export type CronRunStatus = 'success' | 'failed' | 'running';
 
+export type ScheduleType = 'cron' | 'interval' | 'once';
+
+export type SessionTarget = 'isolated' | 'main';
+
+export type DeliveryMode = 'announce' | 'webhook' | 'none';
+
+export type DeliveryChannel = 'whatsapp' | 'discord' | 'slack' | 'telegram' | 'imessage' | 'last';
+
 export interface CronJob {
   id: string;
   name: string;
@@ -14,6 +22,20 @@ export interface CronJob {
   failCount: number;
   createdAt: string;
   agentId?: string;
+  scheduleType?: ScheduleType;
+  intervalMs?: number;
+  runAt?: string;
+  sessionType?: SessionTarget;
+  prompt?: string;
+  model?: string;
+  deliveryMode?: DeliveryMode;
+  deliveryChannel?: DeliveryChannel;
+  webhookUrl?: string;
+  timeout?: number;
+  maxRetries?: number;
+  timezone?: string;
+  deleteAfterRun?: boolean;
+  lightContext?: boolean;
 }
 
 export interface CronRun {
