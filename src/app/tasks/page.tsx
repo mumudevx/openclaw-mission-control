@@ -1,10 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Search, Filter } from "lucide-react";
+import { useState, useCallback } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Plus, Search, Filter, GripVertical } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
 import { mockTasks } from "@/lib/mock/data";
+import { TaskDetailSheet } from "@/components/tasks/task-detail-sheet";
 import type { Task, TaskStatus } from "@/types";
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
@@ -24,17 +42,18 @@ const priorityColors: Record<string, string> = {
   low: "bg-gray-100 text-gray-600",
 };
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCardContent({ task }: { task: Task }) {
   return (
-    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3 shadow-sm transition-shadow hover:shadow-card-hover cursor-grab active:cursor-grabbing">
+    <>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-[var(--content-primary)] line-clamp-2">
           {task.title}
         </p>
       </div>
-
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}>
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
+        >
           {task.priority}
         </span>
         {task.labels.map((label) => (
@@ -46,21 +65,198 @@ function TaskCard({ task }: { task: Task }) {
           </span>
         ))}
       </div>
-
       <div className="mt-3 flex items-center justify-between text-[11px] text-[var(--content-muted)]">
         <span>{task.assigneeId ? "Assigned" : "Unassigned"}</span>
-        {task.dueDate && <span suppressHydrationWarning>Due {new Date(task.dueDate).toLocaleDateString()}</span>}
+        {task.dueDate && (
+          <span suppressHydrationWarning>
+            Due {new Date(task.dueDate).toLocaleDateString()}
+          </span>
+        )}
       </div>
+    </>
+  );
+}
+
+function SortableTaskCard({
+  task,
+  onClick,
+}: {
+  task: Task;
+  onClick: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3 shadow-sm transition-shadow hover:shadow-card-hover ${
+        isDragging ? "opacity-50" : ""
+      }`}
+    >
+      <div className="flex gap-1">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 flex h-5 w-5 shrink-0 cursor-grab items-center justify-center rounded text-[var(--content-muted)] opacity-0 group-hover:opacity-100 transition-opacity active:cursor-grabbing"
+        >
+          <GripVertical className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </button>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
+          <TaskCardContent task={task} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DroppableColumn({
+  column,
+  tasks,
+  onTaskClick,
+}: {
+  column: (typeof columns)[number];
+  tasks: Task[];
+  onTaskClick: (task: Task) => void;
+}) {
+  const taskIds = tasks.map((t) => t.id);
+
+  return (
+    <div className="w-[280px] shrink-0">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: column.color }}
+          />
+          <span className="text-sm font-semibold text-[var(--content-primary)]">
+            {column.label}
+          </span>
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--surface-bg)] px-1.5 text-[11px] font-medium text-[var(--content-muted)]">
+            {tasks.length}
+          </span>
+        </div>
+        <button className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--content-muted)] hover:bg-[var(--surface-bg)] transition-colors">
+          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </button>
+      </div>
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+        <div
+          className="min-h-[200px] space-y-2 rounded-xl bg-[var(--surface-bg)] p-2"
+          data-column={column.id}
+        >
+          {tasks.map((task) => (
+            <SortableTaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onTaskClick(task)}
+            />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }
 
 export default function TasksPage() {
   const [search, setSearch] = useState("");
-  const tasks = mockTasks;
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const filteredTasks = tasks.filter(
-    (t) => t.title.toLowerCase().includes(search.toLowerCase())
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const filteredTasks = tasks.filter((t) =>
+    t.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const findColumnForTask = useCallback(
+    (taskId: string): TaskStatus | null => {
+      const task = tasks.find((t) => t.id === taskId);
+      return task?.status ?? null;
+    },
+    [tasks]
+  );
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const task = tasks.find((t) => t.id === event.active.id);
+      if (task) setActiveTask(task);
+    },
+    [tasks]
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+
+      const activeId = active.id as string;
+      const overId = over.id as string;
+
+      const activeColumn = findColumnForTask(activeId);
+      const overColumn =
+        findColumnForTask(overId) ??
+        // If over a column drop zone (data-column attr), find matching column
+        (columns.find((c) => c.id === overId)?.id ?? null);
+
+      if (!activeColumn || !overColumn || activeColumn === overColumn) return;
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === activeId ? { ...t, status: overColumn } : t
+        )
+      );
+    },
+    [findColumnForTask]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveTask(null);
+
+      if (!over) return;
+
+      const activeId = active.id as string;
+      const overId = over.id as string;
+
+      if (activeId === overId) return;
+
+      const activeColumn = findColumnForTask(activeId);
+      const overColumn = findColumnForTask(overId);
+
+      if (activeColumn && overColumn && activeColumn === overColumn) {
+        // Reorder within same column
+        setTasks((prev) => {
+          const columnTasks = prev.filter((t) => t.status === activeColumn);
+          const otherTasks = prev.filter((t) => t.status !== activeColumn);
+          const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
+          const newIndex = columnTasks.findIndex((t) => t.id === overId);
+
+          const reordered = [...columnTasks];
+          const [moved] = reordered.splice(oldIndex, 1);
+          reordered.splice(newIndex, 0, moved);
+
+          return [...otherTasks, ...reordered];
+        });
+      }
+    },
+    [findColumnForTask]
   );
 
   return (
@@ -90,37 +286,45 @@ export default function TasksPage() {
       </div>
 
       {/* Kanban board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {columns.map((column) => {
-          const columnTasks = filteredTasks.filter((t) => t.status === column.id);
-          return (
-            <div key={column.id} className="w-[280px] shrink-0">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: column.color }}
-                  />
-                  <span className="text-sm font-semibold text-[var(--content-primary)]">
-                    {column.label}
-                  </span>
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--surface-bg)] px-1.5 text-[11px] font-medium text-[var(--content-muted)]">
-                    {columnTasks.length}
-                  </span>
-                </div>
-                <button className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--content-muted)] hover:bg-[var(--surface-bg)] transition-colors">
-                  <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-                </button>
-              </div>
-              <div className="min-h-[200px] space-y-2 rounded-xl bg-[var(--surface-bg)] p-2">
-                {columnTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-              </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {columns.map((column) => {
+            const columnTasks = filteredTasks.filter(
+              (t) => t.status === column.id
+            );
+            return (
+              <DroppableColumn
+                key={column.id}
+                column={column}
+                tasks={columnTasks}
+                onTaskClick={setSelectedTask}
+              />
+            );
+          })}
+        </div>
+
+        <DragOverlay>
+          {activeTask && (
+            <div className="w-[260px] rounded-xl border border-[var(--accent-primary)] bg-[var(--surface-card)] p-3 shadow-card-lg opacity-90">
+              <TaskCardContent task={activeTask} />
             </div>
-          );
-        })}
-      </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      <TaskDetailSheet
+        task={selectedTask}
+        open={!!selectedTask}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTask(null);
+        }}
+      />
     </div>
   );
 }

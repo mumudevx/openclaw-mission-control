@@ -31,13 +31,13 @@
 
 ## Phase 4: Polish & Advanced
 - [ ] Responsive design (mobile-first adjustments)
-- [ ] Dark mode
-- [ ] Command palette (Cmd+K)
+- [x] Dark mode - theme provider, CSS variables, topbar/settings toggle, bg-white cleanup
+- [x] Command palette (Cmd+K) - already implemented with page navigation
 - [ ] Notification system
 - [ ] Performance optimization
-- [ ] @dnd-kit drag & drop integration in Kanban
-- [ ] Agent detail drawer/sheet
-- [ ] Task detail modal
-- [ ] Cron create/edit modal
+- [x] @dnd-kit drag & drop integration in Kanban - cross-column drag, reorder, drag overlay
+- [x] Agent detail drawer/sheet - chat, activity, stats, config tabs
+- [x] Task detail sheet - description, subtasks checklist, meta details
+- [x] Cron create/edit modal - form with cron expression builder
 - [ ] Calendar event create/edit modal
 - [ ] HTML5 Canvas pixel office (currently CSS-based)
