@@ -8,6 +8,7 @@ import { mockCalendarEvents } from "@/lib/mock/data";
 import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
 import { DayView } from "@/components/calendar/day-view";
+import { AddEventSheet } from "@/components/calendar/add-event-sheet";
 import { WEEK_STARTS_ON } from "@/components/calendar/constants";
 
 type View = "month" | "week" | "day";
@@ -29,6 +30,7 @@ function getHeaderTitle(view: View, date: Date): string {
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>("month");
+  const [addEventOpen, setAddEventOpen] = useState(false);
   const events = mockCalendarEvents;
 
   const navigate = (direction: 1 | -1) => {
@@ -53,7 +55,10 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Calendar" description="View scheduled events, cron jobs, and task deadlines">
-        <button className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <button
+          onClick={() => setAddEventOpen(true)}
+          className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+        >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
           New Event
         </button>
@@ -105,6 +110,12 @@ export default function CalendarPage() {
         {view === "week" && <WeekView currentDate={currentDate} events={events} onDayClick={handleDayClick} />}
         {view === "day" && <DayView currentDate={currentDate} events={events} />}
       </div>
+
+      <AddEventSheet
+        open={addEventOpen}
+        onOpenChange={setAddEventOpen}
+        defaultDate={currentDate}
+      />
     </div>
   );
 }

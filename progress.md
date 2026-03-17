@@ -39,5 +39,5 @@
 - [x] Agent detail drawer/sheet - chat, activity, stats, config tabs
 - [x] Task detail sheet - description, subtasks checklist, meta details
 - [x] Cron create/edit modal - form with cron expression builder
-- [ ] Calendar event create/edit modal
-- [ ] HTML5 Canvas pixel office (currently CSS-based)
+- [x] Calendar event create/edit sheet - form with type, date/time, all-day toggle, description
+- [x] HTML5 Canvas pixel office - animated canvas with desks, agents, status indicators
