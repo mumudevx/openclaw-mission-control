@@ -2,7 +2,9 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { mockAgents } from "@/lib/mock/data";
-import { OfficeCanvas } from "@/components/office/office-canvas";
+import dynamic from "next/dynamic";
+
+const OfficeCanvas = dynamic(() => import("@/components/office/office-canvas").then((m) => m.OfficeCanvas), { ssr: false });
 
 export default function OfficePage() {
   const agents = mockAgents;

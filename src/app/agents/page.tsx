@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
-import { AgentDetailSheet } from "@/components/agents/agent-detail-sheet";
-import { AddAgentSheet } from "@/components/agents/add-agent-sheet";
+import dynamic from "next/dynamic";
+
+const AgentDetailSheet = dynamic(() => import("@/components/agents/agent-detail-sheet").then((m) => m.AgentDetailSheet));
+const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
 import { useAgentStore } from "@/stores/agentStore";
 import { mockAgents } from "@/lib/mock/data";
 import type { Agent } from "@/types";

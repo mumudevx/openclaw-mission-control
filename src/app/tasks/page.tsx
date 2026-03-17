@@ -22,7 +22,9 @@ import { Plus, Search, Filter, GripVertical } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
 import { mockTasks } from "@/lib/mock/data";
-import { TaskDetailSheet } from "@/components/tasks/task-detail-sheet";
+import dynamic from "next/dynamic";
+
+const TaskDetailSheet = dynamic(() => import("@/components/tasks/task-detail-sheet").then((m) => m.TaskDetailSheet));
 import type { Task, TaskStatus } from "@/types";
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [

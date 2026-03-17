@@ -5,10 +5,12 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { PageHeader } from "@/components/shared/page-header";
 import { mockCalendarEvents } from "@/lib/mock/data";
+import dynamic from "next/dynamic";
 import { MonthView } from "@/components/calendar/month-view";
-import { WeekView } from "@/components/calendar/week-view";
-import { DayView } from "@/components/calendar/day-view";
-import { AddEventSheet } from "@/components/calendar/add-event-sheet";
+
+const WeekView = dynamic(() => import("@/components/calendar/week-view").then((m) => m.WeekView));
+const DayView = dynamic(() => import("@/components/calendar/day-view").then((m) => m.DayView));
+const AddEventSheet = dynamic(() => import("@/components/calendar/add-event-sheet").then((m) => m.AddEventSheet));
 import { WEEK_STARTS_ON } from "@/components/calendar/constants";
 
 type View = "month" | "week" | "day";

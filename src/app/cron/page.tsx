@@ -6,7 +6,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CronBadge } from "@/components/shared/cron-badge";
-import { AddCronJobSheet } from "@/components/cron/add-cron-job-sheet";
+import dynamic from "next/dynamic";
+
+const AddCronJobSheet = dynamic(() => import("@/components/cron/add-cron-job-sheet").then((m) => m.AddCronJobSheet));
 import { useCronStore } from "@/stores/cronStore";
 import { mockCronJobs } from "@/lib/mock/data";
 

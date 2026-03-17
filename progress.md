@@ -34,7 +34,7 @@
 - [x] Dark mode - theme provider, CSS variables, topbar/settings toggle, bg-white cleanup
 - [x] Command palette (Cmd+K) - already implemented with page navigation
 - [ ] Notification system
-- [ ] Performance optimization
+- [x] Performance optimization - dynamic imports for sheets/charts/canvas, memoized log generation
 - [x] @dnd-kit drag & drop integration in Kanban - cross-column drag, reorder, drag overlay
 - [x] Agent detail drawer/sheet - chat, activity, stats, config tabs
 - [x] Task detail sheet - description, subtasks checklist, meta details

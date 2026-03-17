@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, Download, Pause, Play } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ export default function LogsPage() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const logs = generateMockLogs(50);
+  const logs = useMemo(() => generateMockLogs(50), []);
 
   const filtered = logs.filter((log) => {
     if (activeFilters.length > 0 && !activeFilters.includes(log.level)) return false;

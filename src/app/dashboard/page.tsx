@@ -6,10 +6,12 @@ import { format } from "date-fns";
 import { StatCard } from "@/components/shared/stat-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { TokenUsageChart } from "@/components/dashboard/token-usage-chart";
-import { AgentActivityChart } from "@/components/dashboard/agent-activity-chart";
-import { RecentTasksList } from "@/components/dashboard/recent-tasks-list";
-import { UpcomingCrons } from "@/components/dashboard/upcoming-crons";
+import dynamic from "next/dynamic";
+
+const TokenUsageChart = dynamic(() => import("@/components/dashboard/token-usage-chart").then((m) => m.TokenUsageChart));
+const AgentActivityChart = dynamic(() => import("@/components/dashboard/agent-activity-chart").then((m) => m.AgentActivityChart));
+const RecentTasksList = dynamic(() => import("@/components/dashboard/recent-tasks-list").then((m) => m.RecentTasksList));
+const UpcomingCrons = dynamic(() => import("@/components/dashboard/upcoming-crons").then((m) => m.UpcomingCrons));
 import { mockDashboardStats, mockAgents, mockTasks, mockCronJobs } from "@/lib/mock/data";
 
 export default function DashboardPage() {
