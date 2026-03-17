@@ -46,8 +46,8 @@ export default function GatewaysPage() {
       <PageHeader title="Gateway" description="Monitor and manage your OpenClaw Gateway connection" />
 
       {/* Status hero */}
-      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
-        <div className="flex items-center justify-between">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-4 md:p-6 shadow-card">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${isConnected ? "bg-emerald-50" : "bg-red-50"}`}>
               {isConnected ? (

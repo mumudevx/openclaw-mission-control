@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, Search, Settings, LogOut, Sun, Moon, CheckCircle2, AlertTriangle, Info, AlertOctagon, X } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Sun, Moon, CheckCircle2, AlertTriangle, Info, AlertOctagon, X, Menu } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 import { useNotificationStore, type NotificationType } from "@/stores/notificationStore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,7 +15,10 @@ import {
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
+  sidebarWidth: number;
   onSearchClick: () => void;
+  onMenuClick?: () => void;
+  isMobile?: boolean;
 }
 
 const typeIcons: Record<NotificationType, typeof CheckCircle2> = {
@@ -43,7 +46,7 @@ function formatRelativeTime(timestamp: string): string {
   return `${days}d ago`;
 }
 
-export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
+export function TopBar({ sidebarWidth, onSearchClick, onMenuClick, isMobile }: TopBarProps) {
   const router = useRouter();
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
@@ -55,9 +58,20 @@ export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
 
   return (
     <header
-      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border-default)] bg-[var(--surface-card)]/80 backdrop-blur-sm px-6 transition-all duration-250"
-      style={{ left: sidebarCollapsed ? 64 : 240 }}
+      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border-default)] bg-[var(--surface-card)]/80 backdrop-blur-sm px-4 md:px-6 transition-all duration-250"
+      style={{ left: sidebarWidth }}
     >
+      <div className="flex items-center gap-3 flex-1">
+        {/* Mobile menu button */}
+        {isMobile && onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-default)] hover:bg-[var(--surface-bg)] transition-colors shrink-0"
+          >
+            <Menu className="h-[18px] w-[18px] text-[var(--content-secondary)]" strokeWidth={1.5} />
+          </button>
+        )}
+
       {/* Search */}
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--content-muted)]" strokeWidth={1.5} />
@@ -68,9 +82,10 @@ export function TopBar({ sidebarCollapsed, onSearchClick }: TopBarProps) {
           Search anything... (⌘K)
         </button>
       </div>
+      </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

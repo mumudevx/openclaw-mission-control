@@ -30,7 +30,7 @@
 - [x] Settings (/settings) - gateway config, appearance, notifications
 
 ## Phase 4: Polish & Advanced
-- [ ] Responsive design (mobile-first adjustments)
+- [x] Responsive design - mobile sidebar overlay with backdrop, hamburger menu, responsive padding/grids, horizontal scroll for tables/canvas
 - [x] Dark mode - theme provider, CSS variables, topbar/settings toggle, bg-white cleanup
 - [x] Command palette (Cmd+K) - already implemented with page navigation
 - [x] Notification system - Zustand store, topbar dropdown with real data, toast + store integration on form submits

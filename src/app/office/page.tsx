@@ -17,7 +17,7 @@ export default function OfficePage() {
       />
 
       {/* Stats bar */}
-      <div className="flex items-center gap-6 rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] px-6 py-3 shadow-card">
+      <div className="flex flex-wrap items-center gap-4 md:gap-6 rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] px-4 md:px-6 py-3 shadow-card">
         <div className="flex items-center gap-2 text-sm">
           <div className="h-2 w-2 rounded-full bg-emerald-400" />
           <span className="text-[var(--content-secondary)]">Active:</span>
@@ -49,7 +49,7 @@ export default function OfficePage() {
       </div>
 
       {/* Canvas office */}
-      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-hidden">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-x-auto">
         <OfficeCanvas agents={agents} width={900} height={480} />
       </div>
     </div>

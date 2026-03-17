@@ -49,7 +49,7 @@ export default function CronPage() {
       </div>
 
       {/* Jobs list */}
-      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card">
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-x-auto">
         <div className="border-b border-[var(--border-default)] px-6 py-3">
           <div className="grid grid-cols-12 text-xs font-medium uppercase tracking-wide text-[var(--content-muted)]">
             <span className="col-span-3">Name</span>
