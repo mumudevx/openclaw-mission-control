@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { Bot, Grid3X3, List, Plus, Search } from "lucide-react";
+import React, { useState, useCallback } from "react";
+import { Bot, Grid3X3, List, Plus, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -13,7 +13,8 @@ const AgentDetailSheet = dynamic(() => import("@/components/agents/agent-detail-
 const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
 const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { useAgentStore } from "@/stores/agentStore";
-import { mockAgents } from "@/lib/mock/data";
+import { useAgentsList, useUpdateAgent, useDeleteAgent, toBackendAgentCreate } from "@/hooks/useAgents";
+import { useGatewayEvent } from "@/hooks/useGatewayEvent";
 import type { Agent } from "@/types";
 
 function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
@@ -77,15 +78,26 @@ export default function AgentsPage() {
   const [editAgent, setEditAgent] = useState<Agent | undefined>(undefined);
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
 
-  const { agents, setAgents, updateAgent, removeAgent } = useAgentStore();
+  const { agents: storeAgents, updateAgent, removeAgent } = useAgentStore();
+  const { agents: liveAgents, isLoading, refetch } = useAgentsList();
+  const updateMutation = useUpdateAgent();
+  const deleteMutation = useDeleteAgent();
 
-  const initialized = useRef(false);
-  React.useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      setAgents(mockAgents);
-    }
-  }, [setAgents]);
+  // Use store agents (hydrated by useAgentsList hook)
+  const agents = storeAgents;
+
+  // Subscribe to real-time events
+  const handlePresenceEvent = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handleAgentEvent = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useGatewayEvent("presence", handlePresenceEvent);
+  useGatewayEvent("agent", handleAgentEvent);
+
   const filtered = agents.filter(
     (a) => a.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -107,6 +119,16 @@ export default function AgentsPage() {
   const handleToggleStatus = (agent: Agent) => {
     const newStatus = agent.status === "active" ? "idle" : "active";
     updateAgent(agent.id, { status: newStatus });
+    updateMutation.mutate(
+      { id: agent.id, status: newStatus },
+      {
+        onError: () => {
+          // Revert on error
+          updateAgent(agent.id, { status: agent.status });
+          toast.error("Failed to update agent status");
+        },
+      },
+    );
     toast.success(`Agent ${newStatus === "active" ? "activated" : "deactivated"}`);
     setSelectedAgent({ ...agent, status: newStatus });
   };
@@ -114,10 +136,27 @@ export default function AgentsPage() {
   const confirmDelete = () => {
     if (deleteAgent) {
       removeAgent(deleteAgent.id);
+      deleteMutation.mutate(
+        { id: deleteAgent.id },
+        {
+          onError: () => {
+            toast.error("Failed to delete agent");
+            refetch();
+          },
+        },
+      );
       toast.success("Agent deleted");
       setDeleteAgent(null);
     }
   };
+
+  if (isLoading && agents.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, CheckSquare, Radio, DollarSign, Clock, ArrowRight } from "lucide-react";
+import { Bot, CheckSquare, Radio, DollarSign, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { StatCard } from "@/components/shared/stat-card";
 import { PageHeader } from "@/components/shared/page-header";
@@ -12,11 +12,20 @@ const TokenUsageChart = dynamic(() => import("@/components/dashboard/token-usage
 const AgentActivityChart = dynamic(() => import("@/components/dashboard/agent-activity-chart").then((m) => m.AgentActivityChart));
 const RecentTasksList = dynamic(() => import("@/components/dashboard/recent-tasks-list").then((m) => m.RecentTasksList));
 const UpcomingCrons = dynamic(() => import("@/components/dashboard/upcoming-crons").then((m) => m.UpcomingCrons), { ssr: false });
-import { mockDashboardStats, mockAgents, mockTasks, mockCronJobs } from "@/lib/mock/data";
+import { mockTasks } from "@/lib/mock/data";
+import { useDashboardStats } from "@/hooks/useDashboard";
 
 export default function DashboardPage() {
-  const stats = mockDashboardStats;
+  const { stats, agents, cronJobs, isLoading } = useDashboardStats();
   const today = format(new Date(), "EEEE, MMMM d, yyyy");
+
+  if (isLoading && agents.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -82,7 +91,7 @@ export default function DashboardPage() {
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">
             Agent Activity
           </h3>
-          <AgentActivityChart agents={mockAgents} />
+          <AgentActivityChart agents={agents} />
         </div>
       </div>
 
@@ -101,7 +110,7 @@ export default function DashboardPage() {
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">
             Upcoming Crons
           </h3>
-          <UpcomingCrons jobs={mockCronJobs.filter(j => j.status === 'active').slice(0, 4)} />
+          <UpcomingCrons jobs={cronJobs.filter(j => j.status === 'active').slice(0, 4)} />
         </div>
       </div>
     </div>

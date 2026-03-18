@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { navItems, bottomNavItems } from "@/lib/constants/navigation";
+import { useGateway } from "@/components/providers/gateway-provider";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -15,6 +16,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, mobileOpen }: SidebarProps) {
   const pathname = usePathname();
+  const { connectionState } = useGateway();
   const isMobileMode = mobileOpen !== undefined;
   const isVisible = isMobileMode ? mobileOpen : true;
 
@@ -112,6 +114,26 @@ export function Sidebar({ collapsed, onToggle, mobileOpen }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* Connection indicator */}
+        <div className={cn(
+          "flex items-center gap-2 rounded-xl px-3 py-2",
+          collapsed && !isMobileMode && "justify-center px-0"
+        )}>
+          <div
+            className={cn(
+              "h-2 w-2 shrink-0 rounded-full",
+              connectionState === "connected" && "bg-emerald-500",
+              (connectionState === "connecting" || connectionState === "authenticating" || connectionState === "reconnecting") && "bg-amber-500 animate-pulse",
+              connectionState === "disconnected" && "bg-red-500",
+            )}
+          />
+          {(!collapsed || isMobileMode) && (
+            <span className="text-[11px] text-[var(--content-muted)] capitalize">
+              {connectionState === "authenticating" ? "connecting" : connectionState}
+            </span>
+          )}
+        </div>
 
         {/* Collapse toggle - only on desktop */}
         {!isMobileMode && (

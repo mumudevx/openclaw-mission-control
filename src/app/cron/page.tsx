@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { Clock, Play, Pause, Trash2, Plus, Timer, AlertCircle, CheckCircle } from "lucide-react";
+import React, { useState, useCallback } from "react";
+import { Clock, Play, Pause, Trash2, Plus, Timer, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -12,7 +12,8 @@ import dynamic from "next/dynamic";
 const AddCronJobSheet = dynamic(() => import("@/components/cron/add-cron-job-sheet").then((m) => m.AddCronJobSheet));
 const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { useCronStore } from "@/stores/cronStore";
-import { mockCronJobs } from "@/lib/mock/data";
+import { useCronList, useCronMutations } from "@/hooks/useCronJobs";
+import { useGatewayEvent } from "@/hooks/useGatewayEvent";
 import type { CronJob } from "@/types";
 
 export default function CronPage() {
@@ -20,15 +21,18 @@ export default function CronPage() {
   const [editJob, setEditJob] = useState<CronJob | undefined>(undefined);
   const [deleteJob, setDeleteJob] = useState<CronJob | null>(null);
 
-  const { jobs, setJobs, updateJob, removeJob } = useCronStore();
+  const { jobs: storeJobs, updateJob, removeJob } = useCronStore();
+  const { jobs: liveJobs, isLoading, refetch } = useCronList();
+  const { updateJob: updateMutation, removeJob: removeMutation } = useCronMutations();
 
-  const initialized = useRef(false);
-  React.useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      setJobs(mockCronJobs);
-    }
-  }, [setJobs]);
+  // Use store jobs (hydrated by useCronList hook)
+  const jobs = storeJobs;
+
+  // Subscribe to real-time cron events
+  const handleCronEvent = useCallback(() => {
+    refetch();
+  }, [refetch]);
+  useGatewayEvent("cron", handleCronEvent);
 
   const activeCount = jobs.filter((j) => j.status === "active").length;
   const runningCount = jobs.filter((j) => j.status === "running").length;
@@ -37,10 +41,27 @@ export default function CronPage() {
   const confirmDelete = () => {
     if (deleteJob) {
       removeJob(deleteJob.id);
+      removeMutation.mutate(
+        { id: deleteJob.id },
+        {
+          onError: () => {
+            toast.error("Failed to delete cron job");
+            refetch();
+          },
+        },
+      );
       toast.success("Cron job deleted");
       setDeleteJob(null);
     }
   };
+
+  if (isLoading && jobs.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -115,6 +136,15 @@ export default function CronPage() {
                       e.stopPropagation();
                       const newStatus = job.status === "active" ? "paused" : "active";
                       updateJob(job.id, { status: newStatus });
+                      updateMutation.mutate(
+                        { id: job.id, enabled: newStatus === "active" },
+                        {
+                          onError: () => {
+                            updateJob(job.id, { status: job.status });
+                            toast.error("Failed to update job");
+                          },
+                        },
+                      );
                       toast.success(newStatus === "paused" ? "Job paused" : "Job resumed");
                     }}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] transition-colors"

@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Download, Pause, Play } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Search, Download, Pause, Play, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/shared/date-picker";
-import { generateMockLogs } from "@/lib/mock/data";
-import type { LogLevel } from "@/types";
+import { useGatewayQuery } from "@/hooks/useGatewayQuery";
+import { useGatewayEvent } from "@/hooks/useGatewayEvent";
+import { adaptLogEntry } from "@/lib/gateway/adapters";
+import { useLogStore } from "@/stores/logStore";
+import type { GatewayLogEntry } from "@/lib/gateway";
+import type { LogLevel, LogEntry } from "@/types";
+import { useEffect } from "react";
 
 const levelColors: Record<LogLevel, string> = {
   debug: "text-gray-400",
@@ -42,7 +47,32 @@ export default function LogsPage() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const logs = useMemo(() => generateMockLogs(50), []);
+
+  const { logs: storeLogs, setLogs, addLog } = useLogStore();
+
+  const logsQuery = useGatewayQuery<{ count: number }, GatewayLogEntry[]>(
+    "logs.tail",
+    { count: 50 },
+  );
+
+  // Hydrate store from query
+  useEffect(() => {
+    if (logsQuery.data) {
+      setLogs(logsQuery.data.map(adaptLogEntry));
+    }
+  }, [logsQuery.data, setLogs]);
+
+  // Subscribe to live log events
+  const handleLogEvent = useCallback(
+    (payload: unknown) => {
+      const entry = adaptLogEntry(payload as GatewayLogEntry);
+      addLog(entry);
+    },
+    [addLog],
+  );
+  useGatewayEvent("log", handleLogEvent);
+
+  const logs = storeLogs;
 
   const filtered = logs.filter((log) => {
     if (activeFilters.length > 0 && !activeFilters.includes(log.level)) return false;
@@ -65,6 +95,14 @@ export default function LogsPage() {
       prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
     );
   };
+
+  if (logsQuery.isLoading && logs.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
