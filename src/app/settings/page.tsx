@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle, XCircle, RotateCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, CheckCircle, XCircle, RotateCcw, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useConnectionStore } from "@/stores/connectionStore";
 import { useGateway } from "@/components/providers/gateway-provider";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
 
@@ -46,9 +48,24 @@ export default function SettingsPage() {
     setConfirmReset(false);
   };
 
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
-      <PageHeader title="Settings" description="Configure your Mission Control preferences" />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Settings" description="Configure your Mission Control preferences" />
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 rounded-btn border border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-2.5 text-sm font-medium text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)]"
+        >
+          <LogOut className="h-4 w-4" strokeWidth={1.5} />
+          Logout
+        </button>
+      </div>
 
       {/* Gateway connection */}
       <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">

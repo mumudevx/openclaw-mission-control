@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { StepIndicator } from "./step-indicator";
 import { WelcomeStep } from "./steps/welcome-step";
+import { AuthStep } from "./steps/auth-step";
 import { ConnectionStep } from "./steps/connection-step";
 import { TestStep } from "./steps/test-step";
 import { CompleteStep } from "./steps/complete-step";
@@ -26,35 +27,42 @@ export function SetupWizard() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--surface-bg)] px-4">
       <div className="mb-8">
-        <StepIndicator totalSteps={4} currentStep={step} />
+        <StepIndicator totalSteps={5} currentStep={step} />
       </div>
 
       {step === 0 && <WelcomeStep onNext={() => setStep(1)} />}
 
       {step === 1 && (
-        <ConnectionStep
-          url={gatewayUrl}
-          token={gatewayToken}
-          onUrlChange={setGatewayUrl}
-          onTokenChange={setGatewayToken}
+        <AuthStep
           onBack={() => setStep(0)}
           onNext={() => setStep(2)}
         />
       )}
 
       {step === 2 && (
+        <ConnectionStep
+          url={gatewayUrl}
+          token={gatewayToken}
+          onUrlChange={setGatewayUrl}
+          onTokenChange={setGatewayToken}
+          onBack={() => setStep(1)}
+          onNext={() => setStep(3)}
+        />
+      )}
+
+      {step === 3 && (
         <TestStep
           url={gatewayUrl}
           token={gatewayToken}
-          onBack={() => setStep(1)}
+          onBack={() => setStep(2)}
           onNext={(info) => {
             setServerInfo(info);
-            setStep(3);
+            setStep(4);
           }}
         />
       )}
 
-      {step === 3 && serverInfo && (
+      {step === 4 && serverInfo && (
         <CompleteStep serverInfo={serverInfo} onFinish={handleFinish} />
       )}
     </div>
