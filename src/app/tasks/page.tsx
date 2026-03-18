@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -22,7 +22,6 @@ import { Plus, Search, Filter, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
-import { mockTasks } from "@/lib/mock/data";
 import { useTaskStore } from "@/stores/taskStore";
 import dynamic from "next/dynamic";
 
@@ -185,13 +184,6 @@ export default function TasksPage() {
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
 
   const { tasks, setTasks, moveTask, removeTask } = useTaskStore();
-  const initialized = useRef(false);
-  useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      setTasks(mockTasks);
-    }
-  }, [setTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })

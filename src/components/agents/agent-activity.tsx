@@ -9,8 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { mockAgentActivities } from "@/lib/mock/data";
-import type { Agent, ActivityType } from "@/types";
+import type { Agent, AgentActivity as AgentActivityType, ActivityType } from "@/types";
 
 const activityConfig: Record<
   ActivityType,
@@ -24,10 +23,10 @@ const activityConfig: Record<
   error: { icon: AlertCircle, iconColor: "text-red-500", bgColor: "bg-red-50" },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function AgentActivity({ agent }: { agent: Agent }) {
-  const activities = mockAgentActivities
-    .filter((a) => a.agentId === agent.id)
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  // TODO: Wire to gateway RPC when agent.activities endpoint is available
+  const activities: AgentActivityType[] = [];
 
   return (
     <div className="p-5 space-y-1">

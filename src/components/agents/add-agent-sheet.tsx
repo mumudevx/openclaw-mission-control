@@ -25,10 +25,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAgentStore } from "@/stores/agentStore";
-import { mockAgents } from "@/lib/mock/data";
 import type { Agent } from "@/types";
 
-const AVAILABLE_MODELS = [...new Set(mockAgents.map((a) => a.model))];
+const DEFAULT_MODELS = ['gpt-4', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet'];
 
 const BINDING_CHANNELS = [
   "whatsapp",
@@ -94,6 +93,8 @@ export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps)
   const isEditing = !!agent;
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { agents, addAgent, updateAgent } = useAgentStore();
+  const knownModels = [...new Set(agents.map((a) => a.model))];
+  const AVAILABLE_MODELS = knownModels.length > 0 ? knownModels : DEFAULT_MODELS;
 
   const form = useForm<AddAgentFormValues>({
     resolver: zodResolver(addAgentSchema),

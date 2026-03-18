@@ -18,7 +18,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { mockAgents } from "@/lib/mock/data";
+import { useAgentStore } from "@/stores/agentStore";
 import type { Task } from "@/types";
 
 interface TaskDetailSheetProps {
@@ -56,12 +56,11 @@ const statusLabels: Record<string, string> = {
   done: "Done",
 };
 
-function getAgentName(agentId?: string): string | null {
-  if (!agentId) return null;
-  return mockAgents.find((a) => a.id === agentId)?.name ?? agentId;
-}
-
 export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onDelete }: TaskDetailSheetProps) {
+  const { agents } = useAgentStore();
+  const getAgentName = (agentId?: string) =>
+    agentId ? agents.find((a) => a.id === agentId)?.name ?? agentId : null;
+
   if (!task) return null;
 
   const completedCount = task.subtasks.filter((s) => s.completed).length;

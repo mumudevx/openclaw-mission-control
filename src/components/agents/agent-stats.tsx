@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { mockAgentSessions } from "@/lib/mock/data";
+import { useSessionsList } from "@/hooks/useSessions";
 import type { Agent, AgentSessionStatus } from "@/types";
 
 const sessionStatusMap: Record<
@@ -27,7 +27,8 @@ function MiniStatCard({ label, value }: { label: string; value: string }) {
 }
 
 export function AgentStats({ agent }: { agent: Agent }) {
-  const sessions = mockAgentSessions
+  const { sessions: allSessions } = useSessionsList();
+  const sessions = allSessions
     .filter((s) => s.agentId === agent.id)
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 

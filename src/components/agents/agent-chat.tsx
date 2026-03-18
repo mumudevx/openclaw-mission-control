@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send } from "lucide-react";
 import { format } from "date-fns";
-import { mockChatMessages, mockAIResponses } from "@/lib/mock/data";
 import type { Agent, ChatMessage } from "@/types";
 
 function ChatBubble({ message }: { message: ChatMessage }) {
@@ -60,9 +59,7 @@ function TypingIndicator({ agentName }: { agentName: string }) {
 }
 
 export function AgentChat({ agent }: { agent: Agent }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    mockChatMessages.filter((m) => m.agentId === agent.id)
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -92,24 +89,18 @@ export function AgentChat({ agent }: { agent: Agent }) {
     setInput("");
     setIsTyping(true);
 
-    const delay = 800 + Math.random() * 700;
     setTimeout(() => {
-      const responses = mockAIResponses[agent.id] || [
-        "I've processed your request. Let me know if you need anything else.",
-      ];
-      const response = responses[Math.floor(Math.random() * responses.length)];
-
       const assistantMsg: ChatMessage = {
         id: `msg-${Date.now()}-resp`,
         agentId: agent.id,
         role: "assistant",
-        content: response,
+        content: "Chat requires an active gateway session. Send functionality will be available in a future update.",
         timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
       setIsTyping(false);
-    }, delay);
+    }, 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -12,11 +12,13 @@ const TokenUsageChart = dynamic(() => import("@/components/dashboard/token-usage
 const AgentActivityChart = dynamic(() => import("@/components/dashboard/agent-activity-chart").then((m) => m.AgentActivityChart));
 const RecentTasksList = dynamic(() => import("@/components/dashboard/recent-tasks-list").then((m) => m.RecentTasksList));
 const UpcomingCrons = dynamic(() => import("@/components/dashboard/upcoming-crons").then((m) => m.UpcomingCrons), { ssr: false });
-import { mockTasks } from "@/lib/mock/data";
 import { useDashboardStats } from "@/hooks/useDashboard";
+import { useTaskStore } from "@/stores/taskStore";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function DashboardPage() {
   const { stats, agents, cronJobs, isLoading } = useDashboardStats();
+  const { tasks } = useTaskStore();
   const today = format(new Date(), "EEEE, MMMM d, yyyy");
 
   if (isLoading && agents.length === 0) {
@@ -102,9 +104,19 @@ export default function DashboardPage() {
             <h3 className="text-base font-semibold text-[var(--content-primary)]">
               Recent Tasks
             </h3>
-            <StatusBadge status="active" label={`${mockTasks.filter(t => t.status === 'in_progress').length} in progress`} />
+            {tasks.length > 0 && (
+              <StatusBadge status="active" label={`${tasks.filter(t => t.status === 'in_progress').length} in progress`} />
+            )}
           </div>
-          <RecentTasksList tasks={mockTasks.slice(0, 5)} />
+          {tasks.length > 0 ? (
+            <RecentTasksList tasks={tasks.slice(0, 5)} />
+          ) : (
+            <EmptyState
+              icon={CheckSquare}
+              title="No tasks yet"
+              description="Create a task from the Tasks page to get started"
+            />
+          )}
         </div>
         <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-6 shadow-card">
           <h3 className="mb-4 text-base font-semibold text-[var(--content-primary)]">

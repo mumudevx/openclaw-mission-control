@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { mockAgents } from "@/lib/mock/data";
+import { useAgentStore } from "@/stores/agentStore";
 import type { Task } from "@/types";
 
 const addTaskSchema = z.object({
@@ -47,6 +47,7 @@ interface AddTaskSheetProps {
 }
 
 export function AddTaskSheet({ open, onOpenChange, task }: AddTaskSheetProps) {
+  const { agents } = useAgentStore();
   const isEditing = !!task;
 
   const form = useForm<AddTaskFormValues>({
@@ -306,7 +307,7 @@ export function AddTaskSheet({ open, onOpenChange, task }: AddTaskSheetProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {mockAgents.map((agent) => (
+                  {agents.map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
                       <span className="flex items-center gap-2">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">

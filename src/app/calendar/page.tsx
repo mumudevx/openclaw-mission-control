@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
-import { mockCalendarEvents } from "@/lib/mock/data";
 import { useCalendarStore } from "@/stores/calendarStore";
 import dynamic from "next/dynamic";
 import { MonthView } from "@/components/calendar/month-view";
@@ -40,14 +39,7 @@ export default function CalendarPage() {
   const [editEvent, setEditEvent] = useState<CalendarEvent | undefined>(undefined);
   const [deleteEvent, setDeleteEvent] = useState<CalendarEvent | null>(null);
 
-  const { events, setEvents, removeEvent } = useCalendarStore();
-  const initialized = useRef(false);
-  useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      setEvents(mockCalendarEvents);
-    }
-  }, [setEvents]);
+  const { events, removeEvent } = useCalendarStore();
 
   const navigate = (direction: 1 | -1) => {
     switch (view) {

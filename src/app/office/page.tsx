@@ -1,13 +1,15 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { mockAgents } from "@/lib/mock/data";
+import { useAgentStore } from "@/stores/agentStore";
+import { useAgentsList } from "@/hooks/useAgents";
 import dynamic from "next/dynamic";
 
 const OfficeCanvas = dynamic(() => import("@/components/office/office-canvas").then((m) => m.OfficeCanvas), { ssr: false });
 
 export default function OfficePage() {
-  const agents = mockAgents;
+  useAgentsList();
+  const { agents } = useAgentStore();
 
   return (
     <div className="space-y-6">
