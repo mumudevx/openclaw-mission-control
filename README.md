@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenClaw Mission Control
+
+The command center for your AI agent army. A dashboard for managing AI agents, tasks, cron jobs, and gateway connections — built with Next.js 16, React 19, and TypeScript.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+- An [OpenClaw Gateway](https://github.com/openclaw) instance (for live data)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/mumudevx/openclaw-mission-control.git
+cd openclaw-mission-control
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy the environment template and update as needed:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.local.example .env.local
+```
 
-## Learn More
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_GATEWAY_URL` | WebSocket URL of your OpenClaw Gateway | `ws://localhost:18789` |
+| `NEXT_PUBLIC_GATEWAY_TOKEN` | Authentication token for the gateway | _(empty)_ |
 
-To learn more about Next.js, take a look at the following resources:
+> These values can also be configured through the in-app Setup Wizard on first launch.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Running
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev      # Development server at localhost:3000
+npm run build    # Production build
+npm run lint     # ESLint check
+npm start        # Start production server
+```
 
-## Deploy on Vercel
+## Setup Wizard
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+On first launch, Mission Control presents a 4-step setup wizard:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Welcome** — Introduction screen
+2. **Connection** — Enter your gateway URL (`ws://` or `wss://`) and optional auth token
+3. **Test** — Automatically tests the connection with a 15-second timeout
+4. **Complete** — Displays server info and navigates to the dashboard
+
+Connection settings are persisted in the browser's localStorage. You can re-run the wizard at any time from **Settings > Danger Zone > Reset Setup**.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router) + React 19 + TypeScript 5
+- **Styling:** Tailwind CSS 4 + shadcn/ui
+- **State:** Zustand 5 (client stores)
+- **Data Fetching:** TanStack Query v5 + Gateway RPC
+- **Charts:** Recharts
+- **Drag & Drop:** @dnd-kit/core + @dnd-kit/sortable
+- **Icons:** Lucide React (1.5px stroke)
+- **Forms:** React Hook Form + Zod
+- **Dates:** date-fns
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages
+│   ├── dashboard/    # Main dashboard with stats & charts
+│   ├── gateways/     # Gateway connection management
+│   ├── agents/       # AI agent list & detail views
+│   ├── tasks/        # Kanban board
+│   ├── logs/         # System log viewer
+│   ├── cron/         # Cron job management
+│   ├── calendar/     # Calendar view
+│   ├── office/       # Pixel art virtual office
+│   └── settings/     # App configuration & reset setup
+├── components/
+│   ├── ui/           # shadcn/ui primitives
+│   ├── layout/       # Sidebar, TopBar, AppShell
+│   ├── shared/       # StatCard, StatusBadge, EmptyState, PageHeader
+│   ├── setup/        # Setup wizard steps
+│   └── providers/    # GatewayProvider, SetupGuard, ThemeProvider
+├── hooks/            # Gateway query/mutation/event hooks
+├── stores/           # Zustand state stores
+├── types/            # TypeScript type definitions
+└── lib/
+    ├── gateway/      # Gateway RPC client & adapters
+    └── utils.ts      # Utility functions
+```
+
+## License
+
+MIT
