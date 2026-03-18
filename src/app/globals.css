@@ -123,6 +123,10 @@
   /* --- Radius tokens --- */
   --radius-card: 20px;
   --radius-button: 24px;
+
+  /* --- Sheet width tokens --- */
+  --sheet-width: 520px;
+  --sheet-width-wide: 640px;
 }
 
 /* ==========================================================================

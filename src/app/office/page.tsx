@@ -49,8 +49,8 @@ export default function OfficePage() {
       </div>
 
       {/* Canvas office */}
-      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-x-auto">
-        <OfficeCanvas agents={agents} width={900} height={480} />
+      <div className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] shadow-card overflow-hidden">
+        <OfficeCanvas agents={agents} />
       </div>
     </div>
   );

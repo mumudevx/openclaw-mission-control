@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import type { Agent } from "@/types";
 
 interface OfficeCanvasProps {
@@ -154,9 +154,31 @@ function drawAgent(
 
   // Bot icon (simple pixel face)
   ctx.fillStyle = color;
-  // Eyes
-  ctx.fillRect(cx - 6, ay - 4 + bounce, 4, 4);
-  ctx.fillRect(cx + 2, ay - 4 + bounce, 4, 4);
+  if (status === "offline") {
+    // X X eyes for offline agents
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = "round";
+    // Left X
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, ay - 6 + bounce);
+    ctx.lineTo(cx - 3, ay - 2 + bounce);
+    ctx.moveTo(cx - 3, ay - 6 + bounce);
+    ctx.lineTo(cx - 7, ay - 2 + bounce);
+    ctx.stroke();
+    // Right X
+    ctx.beginPath();
+    ctx.moveTo(cx + 3, ay - 6 + bounce);
+    ctx.lineTo(cx + 7, ay - 2 + bounce);
+    ctx.moveTo(cx + 7, ay - 6 + bounce);
+    ctx.lineTo(cx + 3, ay - 2 + bounce);
+    ctx.stroke();
+    ctx.lineCap = "butt";
+  } else {
+    // Normal square eyes
+    ctx.fillRect(cx - 6, ay - 4 + bounce, 4, 4);
+    ctx.fillRect(cx + 2, ay - 4 + bounce, 4, 4);
+  }
   // Mouth
   ctx.fillRect(cx - 4, ay + 4 + bounce, 8, 2);
 
@@ -219,14 +241,51 @@ function drawDecorations(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.globalAlpha = 1;
 }
 
-export function OfficeCanvas({ agents, width = 900, height = 480 }: OfficeCanvasProps) {
+function computeDesks(containerWidth: number): { positions: { x: number; y: number }[]; canvasWidth: number; canvasHeight: number } {
+  const cols = 4;
+  const deskW = 128;
+  const gapX = (containerWidth - cols * deskW) / (cols + 1);
+  const effectiveGapX = Math.max(gapX, 24);
+  const canvasWidth = containerWidth;
+
+  const positions: { x: number; y: number }[] = [];
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = effectiveGapX + col * (deskW + effectiveGapX);
+      const y = 100 + row * 200;
+      positions.push({ x, y });
+    }
+  }
+
+  return { positions, canvasWidth, canvasHeight: 480 };
+}
+
+export function OfficeCanvas({ agents }: OfficeCanvasProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
   const rafRef = useRef<number>(0);
   const agentsRef = useRef(agents);
+  const [containerWidth, setContainerWidth] = useState(900);
+
   useEffect(() => {
     agentsRef.current = agents;
   }, [agents]);
+
+  const measure = useCallback(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.clientWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  const { positions, canvasWidth, canvasHeight } = computeDesks(containerWidth);
 
   useEffect(() => {
     let running = true;
@@ -239,24 +298,26 @@ export function OfficeCanvas({ agents, width = 900, height = 480 }: OfficeCanvas
       if (!ctx) return;
 
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = canvasWidth * dpr;
+      canvas.height = canvasHeight * dpr;
       ctx.scale(dpr, dpr);
 
       frameRef.current += 1;
       const frame = frameRef.current;
 
-      ctx.clearRect(0, 0, width, height);
-      drawFloor(ctx, width, height);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      drawFloor(ctx, canvasWidth, canvasHeight);
 
       const visibleAgents = agentsRef.current.slice(0, 8);
       visibleAgents.forEach((agent, i) => {
-        const pos = DESK_POSITIONS[i];
-        drawDesk(ctx, pos.x, pos.y);
-        drawAgent(ctx, agent, pos.x, pos.y, frame);
+        if (i < positions.length) {
+          const pos = positions[i];
+          drawDesk(ctx, pos.x, pos.y);
+          drawAgent(ctx, agent, pos.x, pos.y, frame);
+        }
       });
 
-      drawDecorations(ctx, width, height);
+      drawDecorations(ctx, canvasWidth, canvasHeight);
       rafRef.current = requestAnimationFrame(draw);
     }
 
@@ -265,13 +326,15 @@ export function OfficeCanvas({ agents, width = 900, height = 480 }: OfficeCanvas
       running = false;
       cancelAnimationFrame(rafRef.current);
     };
-  }, [width, height]);
+  }, [canvasWidth, canvasHeight, positions]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width, height, imageRendering: "auto" }}
-      className="block"
-    />
+    <div ref={containerRef} className="w-full">
+      <canvas
+        ref={canvasRef}
+        style={{ width: canvasWidth, height: canvasHeight, imageRendering: "auto" }}
+        className="block"
+      />
+    </div>
   );
 }
