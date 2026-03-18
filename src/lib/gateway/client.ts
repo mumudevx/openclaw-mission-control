@@ -1,12 +1,13 @@
-import type {
-  ConnectionState,
-  ConnectParams,
-  Frame,
-  HelloOkFrame,
-  ReqFrame,
-  ResFrame,
-  Snapshot,
-  ServerInfo,
+import {
+  GATEWAY_PROTOCOL_VERSION,
+  type ConnectionState,
+  type ConnectParams,
+  type Frame,
+  type HelloOkFrame,
+  type ReqFrame,
+  type ResFrame,
+  type Snapshot,
+  type ServerInfo,
 } from './types';
 
 type EventCallback = (payload: unknown) => void;
@@ -184,13 +185,13 @@ export class GatewayClient {
     this.setState('authenticating');
 
     const connectParams: ConnectParams = {
-      minProtocol: 1,
-      maxProtocol: 1,
+      minProtocol: GATEWAY_PROTOCOL_VERSION,
+      maxProtocol: GATEWAY_PROTOCOL_VERSION,
       client: {
-        id: 'mission-control',
+        id: 'openclaw-control-ui',
         version: '1.0.0',
         platform: 'web',
-        mode: 'operator',
+        mode: 'ui',
       },
     };
 
@@ -203,14 +204,22 @@ export class GatewayClient {
     const frame: ReqFrame = { type: 'req', id, method: 'connect', params: connectParams };
     this.socket?.send(JSON.stringify(frame));
 
-    // The response will come as hello-ok or res with error
+    // The response payload contains the hello-ok data
     const timer = setTimeout(() => {
       this.pending.delete(id);
       this.disconnect();
     }, this.rpcTimeout);
 
     this.pending.set(id, {
-      resolve: () => { /* handled via hello-ok */ },
+      resolve: (payload) => {
+        const data = payload as HelloOkFrame | undefined;
+        if (data) {
+          this._serverInfo = data.server;
+          this._snapshot = data.snapshot ?? {};
+        }
+        this.reconnectAttempts = 0;
+        this.setState('connected');
+      },
       reject: (err) => {
         console.error('Auth failed:', err);
         this.disconnect();

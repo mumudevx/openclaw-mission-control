@@ -91,15 +91,43 @@ export interface AuthInfo {
   role?: string;
 }
 
+// Valid gateway client identifiers (from openclaw gateway protocol)
+export type GatewayClientId =
+  | 'webchat-ui'
+  | 'openclaw-control-ui'
+  | 'webchat'
+  | 'cli'
+  | 'gateway-client'
+  | 'openclaw-macos'
+  | 'openclaw-ios'
+  | 'openclaw-android'
+  | 'node-host'
+  | 'test'
+  | 'fingerprint'
+  | 'openclaw-probe';
+
+// Valid gateway client modes (from openclaw gateway protocol)
+export type GatewayClientMode =
+  | 'webchat'
+  | 'cli'
+  | 'ui'
+  | 'backend'
+  | 'node'
+  | 'probe'
+  | 'test';
+
+// Current gateway protocol version
+export const GATEWAY_PROTOCOL_VERSION = 3;
+
 // ConnectParams (client → server after challenge)
 export interface ConnectParams {
-  minProtocol: 1;
-  maxProtocol: 1;
+  minProtocol: number;
+  maxProtocol: number;
   client: {
-    id: 'mission-control';
+    id: GatewayClientId;
     version: string;
-    platform: 'web';
-    mode: 'operator';
+    platform: string;
+    mode: GatewayClientMode;
   };
   auth?: {
     token?: string;
@@ -248,6 +276,30 @@ export interface GatewayUsageStatus {
   totalCost: number;
   todayTokens: number;
   todayCost: number;
+}
+
+// RPC list response wrappers (gateway wraps arrays in objects)
+export interface AgentsListResponse {
+  agents: GatewayAgentRow[];
+  defaultId?: string;
+}
+
+export interface SessionsListResponse {
+  sessions: GatewaySessionRow[];
+}
+
+export interface CronListResponse {
+  jobs: GatewayCronJob[];
+  total?: number;
+  hasMore?: boolean;
+}
+
+export interface LogsTailResponse {
+  entries: GatewayLogEntry[];
+}
+
+export interface ChannelsStatusResponse {
+  channels: GatewayChannelStatus[];
 }
 
 // Connection state for the client
