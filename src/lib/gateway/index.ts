@@ -22,6 +22,11 @@ export type {
   GatewayHealthResponse,
   GatewayUsageStatus,
   GatewayLogEntry,
+  AgentsListResponse,
+  SessionsListResponse,
+  CronListResponse,
+  LogsTailResponse,
+  ChannelsStatusResponse,
   Snapshot,
   ServerInfo,
 } from './types';

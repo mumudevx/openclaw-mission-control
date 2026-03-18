@@ -2,9 +2,9 @@ import { useGatewayQuery } from './useGatewayQuery';
 import { adaptAgent, adaptCronJob } from '@/lib/gateway/adapters';
 import { gateway } from '@/lib/gateway';
 import type {
-  GatewayAgentRow,
-  GatewaySessionRow,
-  GatewayCronJob,
+  AgentsListResponse,
+  SessionsListResponse,
+  CronListResponse,
   GatewayHealthResponse,
   GatewayUsageStatus,
 } from '@/lib/gateway';
@@ -14,9 +14,9 @@ import type { DashboardStats } from '@/types';
 export function useDashboardStats() {
   const { connectionState } = useGateway();
 
-  const agentsQuery = useGatewayQuery<undefined, GatewayAgentRow[]>('agents.list');
-  const sessionsQuery = useGatewayQuery<undefined, GatewaySessionRow[]>('sessions.list');
-  const cronQuery = useGatewayQuery<undefined, GatewayCronJob[]>('cron.list');
+  const agentsQuery = useGatewayQuery<undefined, AgentsListResponse>('agents.list');
+  const sessionsQuery = useGatewayQuery<undefined, SessionsListResponse>('sessions.list');
+  const cronQuery = useGatewayQuery<undefined, CronListResponse>('cron.list');
   const healthQuery = useGatewayQuery<undefined, GatewayHealthResponse>('health');
   const usageQuery = useGatewayQuery<undefined, GatewayUsageStatus>('usage.status');
 
@@ -27,14 +27,14 @@ export function useDashboardStats() {
     healthQuery.isLoading ||
     usageQuery.isLoading;
 
-  const agents =
-    agentsQuery.data && sessionsQuery.data
-      ? agentsQuery.data.map((row) =>
-          adaptAgent(row, sessionsQuery.data!, gateway.snapshot.presence?.[row.id]),
-        )
-      : [];
+  const agentRows = agentsQuery.data?.agents ?? [];
+  const sessionRows = sessionsQuery.data?.sessions ?? [];
 
-  const cronJobs = cronQuery.data ? cronQuery.data.map(adaptCronJob) : [];
+  const agents = agentRows.map((row) =>
+    adaptAgent(row, sessionRows, gateway.snapshot.presence?.[row.id]),
+  );
+
+  const cronJobs = (cronQuery.data?.jobs ?? []).map(adaptCronJob);
 
   const stats: DashboardStats = {
     activeAgents: agents.filter((a) => a.status === 'active').length,

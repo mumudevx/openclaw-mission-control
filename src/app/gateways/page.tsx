@@ -11,7 +11,7 @@ import { adaptHealth, adaptChannel } from "@/lib/gateway/adapters";
 import { useConnectionStore } from "@/stores/connectionStore";
 import type {
   GatewayHealthResponse,
-  GatewayChannelStatus,
+  ChannelsStatusResponse,
 } from "@/lib/gateway";
 
 function ResourceGauge({ label, value, max, unit }: { label: string; value: number; max: number; unit: string }) {
@@ -51,7 +51,7 @@ export default function GatewaysPage() {
   const gatewayUrl = useConnectionStore((s) => s.gatewayUrl);
 
   const healthQuery = useGatewayQuery<undefined, GatewayHealthResponse>("health");
-  const channelsQuery = useGatewayQuery<undefined, GatewayChannelStatus[]>("channels.status");
+  const channelsQuery = useGatewayQuery<undefined, ChannelsStatusResponse>("channels.status");
 
   // Subscribe to health events for real-time updates
   const handleHealthEvent = useCallback(() => {
@@ -65,9 +65,7 @@ export default function GatewaysPage() {
     ? adaptHealth(healthQuery.data, connectionState, gatewayUrl)
     : null;
 
-  const channels = channelsQuery.data
-    ? channelsQuery.data.map(adaptChannel)
-    : [];
+  const channels = (channelsQuery.data?.channels ?? []).map(adaptChannel);
 
   const isConnected = connectionState === "connected";
 

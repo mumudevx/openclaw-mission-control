@@ -3,16 +3,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGatewayQuery } from './useGatewayQuery';
 import { useGatewayMutation } from './useGatewayMutation';
 import { adaptCronJob, toBackendCronCreate } from '@/lib/gateway/adapters';
-import type { GatewayCronJob } from '@/lib/gateway';
+import type { GatewayCronJob, CronListResponse } from '@/lib/gateway';
 import type { CronJob } from '@/types';
 import { useCronStore } from '@/stores/cronStore';
 
 export function useCronList() {
   const { setJobs } = useCronStore();
 
-  const query = useGatewayQuery<undefined, GatewayCronJob[]>('cron.list');
+  const query = useGatewayQuery<undefined, CronListResponse>('cron.list');
 
-  const jobs = query.data ? query.data.map(adaptCronJob) : [];
+  const jobs = (query.data?.jobs ?? []).map(adaptCronJob);
 
   useEffect(() => {
     if (jobs.length > 0) {

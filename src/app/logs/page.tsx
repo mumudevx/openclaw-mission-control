@@ -9,7 +9,7 @@ import { useGatewayQuery } from "@/hooks/useGatewayQuery";
 import { useGatewayEvent } from "@/hooks/useGatewayEvent";
 import { adaptLogEntry } from "@/lib/gateway/adapters";
 import { useLogStore } from "@/stores/logStore";
-import type { GatewayLogEntry } from "@/lib/gateway";
+import type { GatewayLogEntry, LogsTailResponse } from "@/lib/gateway";
 import type { LogLevel, LogEntry } from "@/types";
 import { useEffect } from "react";
 
@@ -50,15 +50,15 @@ export default function LogsPage() {
 
   const { logs: storeLogs, setLogs, addLog } = useLogStore();
 
-  const logsQuery = useGatewayQuery<{ count: number }, GatewayLogEntry[]>(
+  const logsQuery = useGatewayQuery<{ count: number }, LogsTailResponse>(
     "logs.tail",
     { count: 50 },
   );
 
   // Hydrate store from query
   useEffect(() => {
-    if (logsQuery.data) {
-      setLogs(logsQuery.data.map(adaptLogEntry));
+    if (logsQuery.data?.entries) {
+      setLogs(logsQuery.data.entries.map(adaptLogEntry));
     }
   }, [logsQuery.data, setLogs]);
 

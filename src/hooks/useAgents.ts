@@ -4,22 +4,22 @@ import { useGatewayQuery } from './useGatewayQuery';
 import { useGatewayMutation } from './useGatewayMutation';
 import { adaptAgent, toBackendAgentCreate } from '@/lib/gateway/adapters';
 import { gateway } from '@/lib/gateway';
-import type { GatewayAgentRow, GatewaySessionRow } from '@/lib/gateway';
+import type { GatewayAgentRow, AgentsListResponse, SessionsListResponse } from '@/lib/gateway';
 import type { Agent } from '@/types';
 import { useAgentStore } from '@/stores/agentStore';
 
 export function useAgentsList() {
   const { setAgents } = useAgentStore();
 
-  const agentsQuery = useGatewayQuery<undefined, GatewayAgentRow[]>('agents.list');
-  const sessionsQuery = useGatewayQuery<undefined, GatewaySessionRow[]>('sessions.list');
+  const agentsQuery = useGatewayQuery<undefined, AgentsListResponse>('agents.list');
+  const sessionsQuery = useGatewayQuery<undefined, SessionsListResponse>('sessions.list');
 
-  const agents =
-    agentsQuery.data && sessionsQuery.data
-      ? agentsQuery.data.map((row) =>
-          adaptAgent(row, sessionsQuery.data!, gateway.snapshot.presence?.[row.id]),
-        )
-      : [];
+  const agentRows = agentsQuery.data?.agents ?? [];
+  const sessionRows = sessionsQuery.data?.sessions ?? [];
+
+  const agents = agentRows.map((row) =>
+    adaptAgent(row, sessionRows, gateway.snapshot.presence?.[row.id]),
+  );
 
   useEffect(() => {
     if (agents.length > 0) {
