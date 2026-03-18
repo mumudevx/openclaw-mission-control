@@ -5,3 +5,4 @@ export { useTaskStore } from './taskStore';
 export { useGatewayStore } from './gatewayStore';
 export { useCronStore } from './cronStore';
 export { useLogStore } from './logStore';
+export { useCalendarStore } from './calendarStore';
