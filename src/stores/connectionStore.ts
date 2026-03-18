@@ -4,30 +4,28 @@ import { persist } from 'zustand/middleware';
 interface ConnectionState {
   gatewayUrl: string;
   gatewayToken: string;
-  mockMode: boolean;
+  setupCompleted: boolean;
 
   setGatewayUrl: (url: string) => void;
   setGatewayToken: (token: string) => void;
-  setMockMode: (mock: boolean) => void;
+  setSetupCompleted: (v: boolean) => void;
+  resetSetup: () => void;
 }
 
-const getEnvDefault = (key: string, fallback: string): string => {
-  if (typeof window !== 'undefined') {
-    return (process.env[key] as string) ?? fallback;
-  }
-  return fallback;
-};
+const DEFAULT_URL = 'ws://localhost:18789';
+const DEFAULT_TOKEN = '';
 
 export const useConnectionStore = create<ConnectionState>()(
   persist(
     (set) => ({
-      gatewayUrl: getEnvDefault('NEXT_PUBLIC_GATEWAY_URL', 'ws://localhost:18789'),
-      gatewayToken: getEnvDefault('NEXT_PUBLIC_GATEWAY_TOKEN', ''),
-      mockMode: getEnvDefault('NEXT_PUBLIC_MOCK_MODE', 'true') === 'true',
+      gatewayUrl: DEFAULT_URL,
+      gatewayToken: DEFAULT_TOKEN,
+      setupCompleted: false,
 
       setGatewayUrl: (url) => set({ gatewayUrl: url }),
       setGatewayToken: (token) => set({ gatewayToken: token }),
-      setMockMode: (mock) => set({ mockMode: mock }),
+      setSetupCompleted: (v) => set({ setupCompleted: v }),
+      resetSetup: () => set({ gatewayUrl: DEFAULT_URL, gatewayToken: DEFAULT_TOKEN, setupCompleted: false }),
     }),
     {
       name: 'openclaw-connection',

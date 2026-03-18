@@ -31,15 +31,15 @@ export function useGateway(): GatewayContextValue {
 export function GatewayProvider({ children }: { children: ReactNode }) {
   const gatewayUrl = useConnectionStore((s) => s.gatewayUrl);
   const gatewayToken = useConnectionStore((s) => s.gatewayToken);
-  const mockMode = useConnectionStore((s) => s.mockMode);
+  const setupCompleted = useConnectionStore((s) => s.setupCompleted);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
 
   const doConnect = useCallback(() => {
-    gateway.configure({ url: gatewayUrl, token: gatewayToken, mockMode });
+    gateway.configure({ url: gatewayUrl, token: gatewayToken });
     gateway.connect();
-  }, [gatewayUrl, gatewayToken, mockMode]);
+  }, [gatewayUrl, gatewayToken]);
 
   useEffect(() => {
     const unsub = gateway.onStateChange((state) => {
@@ -49,13 +49,15 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    doConnect();
+    if (setupCompleted) {
+      doConnect();
+    }
 
     return () => {
       unsub();
       gateway.disconnect();
     };
-  }, [doConnect]);
+  }, [doConnect, setupCompleted]);
 
   const reconnect = useCallback(() => {
     gateway.disconnect();

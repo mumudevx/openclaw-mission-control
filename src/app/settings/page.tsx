@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -16,18 +16,17 @@ export default function SettingsPage() {
 
   const gatewayUrl = useConnectionStore((s) => s.gatewayUrl);
   const gatewayToken = useConnectionStore((s) => s.gatewayToken);
-  const mockMode = useConnectionStore((s) => s.mockMode);
   const setGatewayUrl = useConnectionStore((s) => s.setGatewayUrl);
   const setGatewayToken = useConnectionStore((s) => s.setGatewayToken);
-  const setMockMode = useConnectionStore((s) => s.setMockMode);
+  const resetSetup = useConnectionStore((s) => s.resetSetup);
 
   const { connectionState, reconnect } = useGateway();
   const [testing, setTesting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const handleTestConnection = async () => {
     setTesting(true);
     reconnect();
-    // Give it a moment to connect
     await new Promise((r) => setTimeout(r, 2000));
     setTesting(false);
     if (connectionState === "connected") {
@@ -35,6 +34,16 @@ export default function SettingsPage() {
     } else {
       toast.error("Connection failed — check URL and token");
     }
+  };
+
+  const handleResetSetup = () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    resetSetup();
+    toast.success("Setup has been reset — the wizard will appear on next load");
+    setConfirmReset(false);
   };
 
   return (
@@ -82,23 +91,10 @@ export default function SettingsPage() {
               className="mt-1.5 rounded-xl border-[var(--border-default)]"
             />
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[var(--content-primary)]">Mock Mode</p>
-              <p className="text-xs text-[var(--content-muted)]">Use mock data instead of live gateway</p>
-            </div>
-            <Switch
-              checked={mockMode}
-              onCheckedChange={(checked) => {
-                setMockMode(checked);
-                toast.success(checked ? "Mock mode enabled" : "Mock mode disabled — will connect to gateway");
-              }}
-            />
-          </div>
           <div className="flex gap-3">
             <button
               onClick={handleTestConnection}
-              disabled={testing || mockMode}
+              disabled={testing}
               className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               {testing ? (
@@ -148,6 +144,31 @@ export default function SettingsPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div className="rounded-card border border-red-200 bg-[var(--surface-card)] p-6 shadow-card">
+        <h3 className="text-base font-semibold text-red-600">Danger Zone</h3>
+        <p className="mt-1 text-sm text-[var(--content-secondary)]">Irreversible actions</p>
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[var(--content-primary)]">Reset Setup</p>
+              <p className="text-xs text-[var(--content-muted)]">Clear connection settings and return to the setup wizard</p>
+            </div>
+            <button
+              onClick={handleResetSetup}
+              className={`flex items-center gap-2 rounded-btn px-4 py-2.5 text-sm font-medium transition-colors ${
+                confirmReset
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "border border-red-300 text-red-600 hover:bg-red-50"
+              }`}
+            >
+              <RotateCcw className="h-4 w-4" strokeWidth={1.5} />
+              {confirmReset ? "Confirm Reset" : "Reset Setup"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

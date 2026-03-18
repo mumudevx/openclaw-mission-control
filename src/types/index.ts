@@ -64,3 +64,5 @@ export type {
   Decoration,
   OfficeLayout,
 } from './office';
+
+export type { DashboardStats } from './dashboard';

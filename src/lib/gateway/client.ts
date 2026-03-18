@@ -8,7 +8,6 @@ import type {
   Snapshot,
   ServerInfo,
 } from './types';
-import { mockHandler } from './mock-handler';
 
 type EventCallback = (payload: unknown) => void;
 type StateCallback = (state: ConnectionState) => void;
@@ -22,7 +21,6 @@ interface PendingRequest {
 export class GatewayClient {
   private url = '';
   private token = '';
-  private mockMode = false;
   private socket: WebSocket | null = null;
   private _state: ConnectionState = 'disconnected';
   private listeners = new Map<string, Set<EventCallback>>();
@@ -49,20 +47,12 @@ export class GatewayClient {
     return this._serverInfo;
   }
 
-  configure(opts: { url: string; token: string; mockMode: boolean }): void {
+  configure(opts: { url: string; token: string }): void {
     this.url = opts.url;
     this.token = opts.token;
-    this.mockMode = opts.mockMode;
   }
 
   connect(): void {
-    if (this.mockMode) {
-      this.setState('connected');
-      this._serverInfo = { name: 'mock', version: '0.0.0' };
-      this._snapshot = {};
-      return;
-    }
-
     if (this._state === 'connected' || this._state === 'connecting') {
       return;
     }
@@ -120,10 +110,6 @@ export class GatewayClient {
   }
 
   async rpc<P = unknown, R = unknown>(method: string, params?: P): Promise<R> {
-    if (this.mockMode) {
-      return mockHandler(method, params) as Promise<R>;
-    }
-
     if (this._state !== 'connected') {
       throw new Error(`Cannot send RPC: client is ${this._state}`);
     }

@@ -9,7 +9,7 @@ import type {
   GatewayUsageStatus,
 } from '@/lib/gateway';
 import { useGateway } from '@/components/providers/gateway-provider';
-import type { DashboardStats } from '@/lib/mock/data';
+import type { DashboardStats } from '@/types';
 
 export function useDashboardStats() {
   const { connectionState } = useGateway();
