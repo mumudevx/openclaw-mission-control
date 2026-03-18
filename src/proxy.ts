@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
 
 const COOKIE_NAME = 'oc-session';
 
@@ -10,7 +9,7 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow static assets and Next.js internals
@@ -57,8 +56,7 @@ export async function middleware(request: NextRequest) {
 
   // Verify the JWT token
   try {
-    // We need the secret from the credentials file, but middleware runs on Edge
-    // So we fetch the status endpoint which does the full verification
+    // Verify via the status endpoint which does full JWT verification
     const statusUrl = new URL('/api/auth/status', request.url);
     const statusRes = await fetch(statusUrl, {
       headers: { cookie: request.headers.get('cookie') || '' },
