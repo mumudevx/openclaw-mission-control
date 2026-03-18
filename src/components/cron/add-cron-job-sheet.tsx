@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -115,11 +115,13 @@ type AddCronJobFormValues = z.infer<typeof addCronJobSchema>;
 interface AddCronJobSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  job?: CronJob;
 }
 
-export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
+export function AddCronJobSheet({ open, onOpenChange, job }: AddCronJobSheetProps) {
+  const isEditing = !!job;
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const { jobs, addJob } = useCronStore();
+  const { jobs, addJob, updateJob } = useCronStore();
   const { agents } = useAgentStore();
 
   const form = useForm<AddCronJobFormValues>({
@@ -151,6 +153,62 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
   const [runAtHour, setRunAtHour] = useState("12");
   const [runAtMinute, setRunAtMinute] = useState("00");
 
+  useEffect(() => {
+    if (job && open) {
+      let schedType: "cron" | "interval" | "once" = "cron";
+      let intervalVal = "";
+      let intervalUn: "minutes" | "hours" | "days" = "minutes";
+
+      if (job.scheduleType === "interval" && job.intervalMs) {
+        schedType = "interval";
+        if (job.intervalMs % 86_400_000 === 0) {
+          intervalVal = String(job.intervalMs / 86_400_000);
+          intervalUn = "days";
+        } else if (job.intervalMs % 3_600_000 === 0) {
+          intervalVal = String(job.intervalMs / 3_600_000);
+          intervalUn = "hours";
+        } else {
+          intervalVal = String(job.intervalMs / 60_000);
+          intervalUn = "minutes";
+        }
+      } else if (job.scheduleType === "once") {
+        schedType = "once";
+      }
+
+      form.reset({
+        name: job.name,
+        description: job.description || "",
+        scheduleType: schedType,
+        expression: job.scheduleType === "cron" ? job.expression : "",
+        intervalValue: intervalVal,
+        intervalUnit: intervalUn,
+        runAt: job.runAt || "",
+        agentId: job.agentId || "",
+        sessionType: job.sessionType || "isolated",
+        prompt: job.prompt || "",
+        model: job.model || "",
+        deliveryMode: job.deliveryMode || "announce",
+        deliveryChannel: job.deliveryChannel || "",
+        webhookUrl: job.webhookUrl || "",
+        timeout: job.timeout ? String(job.timeout) : "",
+        maxRetries: job.maxRetries ? String(job.maxRetries) : "",
+        timezone: job.timezone || "",
+        deleteAfterRun: job.deleteAfterRun || false,
+        lightContext: job.lightContext || false,
+      });
+
+      const hasAdvanced = !!(job.model || job.deliveryMode === "webhook" || job.deliveryChannel || job.timeout || job.maxRetries || job.timezone || job.deleteAfterRun || job.lightContext);
+      if (hasAdvanced) setShowAdvanced(true);
+
+      if (job.runAt) {
+        const d = new Date(job.runAt);
+        setRunAtDate(d);
+        setRunAtHour(String(d.getHours()).padStart(2, "0"));
+        setRunAtMinute(String(d.getMinutes()).padStart(2, "0"));
+      }
+    }
+  }, [job, open, form]);
+
   const scheduleType = form.watch("scheduleType");
   const deliveryMode = form.watch("deliveryMode") as DeliveryMode;
 
@@ -167,7 +225,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
 
   function onSubmit(values: AddCronJobFormValues) {
     const nameExists = jobs.some(
-      (j) => j.name.toLowerCase() === values.name.toLowerCase()
+      (j) => j.name.toLowerCase() === values.name.toLowerCase() && (!isEditing || j.id !== job.id)
     );
     if (nameExists) {
       form.setError("name", {
@@ -188,40 +246,68 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
       expression = `once at ${values.runAt}`;
     }
 
-    const newJob: CronJob = {
-      id: `cron-${crypto.randomUUID().slice(0, 8)}`,
-      name: values.name,
-      description: values.description || "",
-      expression,
-      status: "active",
-      nextRun: values.scheduleType === "once" && values.runAt
-        ? new Date(values.runAt).toISOString()
-        : new Date(Date.now() + 3_600_000).toISOString(),
-      runCount: 0,
-      failCount: 0,
-      createdAt: now,
-      agentId: values.agentId || undefined,
-      scheduleType: values.scheduleType as ScheduleType,
-      intervalMs,
-      runAt: values.runAt || undefined,
-      sessionType: values.sessionType as "isolated" | "main",
-      prompt: values.prompt || undefined,
-      model: values.model || undefined,
-      deliveryMode: values.deliveryMode as DeliveryMode,
-      deliveryChannel: values.deliveryChannel
-        ? (values.deliveryChannel as CronJob["deliveryChannel"])
-        : undefined,
-      webhookUrl: values.webhookUrl || undefined,
-      timeout: values.timeout ? parseInt(values.timeout, 10) : undefined,
-      maxRetries: values.maxRetries ? parseInt(values.maxRetries, 10) : undefined,
-      timezone: values.timezone || undefined,
-      deleteAfterRun: values.deleteAfterRun || undefined,
-      lightContext: values.lightContext || undefined,
-    };
+    if (isEditing) {
+      updateJob(job.id, {
+        name: values.name,
+        description: values.description || "",
+        expression,
+        agentId: values.agentId || undefined,
+        scheduleType: values.scheduleType as ScheduleType,
+        intervalMs,
+        runAt: values.runAt || undefined,
+        sessionType: values.sessionType as "isolated" | "main",
+        prompt: values.prompt || undefined,
+        model: values.model || undefined,
+        deliveryMode: values.deliveryMode as DeliveryMode,
+        deliveryChannel: values.deliveryChannel
+          ? (values.deliveryChannel as CronJob["deliveryChannel"])
+          : undefined,
+        webhookUrl: values.webhookUrl || undefined,
+        timeout: values.timeout ? parseInt(values.timeout, 10) : undefined,
+        maxRetries: values.maxRetries ? parseInt(values.maxRetries, 10) : undefined,
+        timezone: values.timezone || undefined,
+        deleteAfterRun: values.deleteAfterRun || undefined,
+        lightContext: values.lightContext || undefined,
+      });
+      toast.success("Cron job updated");
+      useNotificationStore.getState().addNotification({ type: "success", title: "Cron job updated", message: values.name });
+    } else {
+      const newJob: CronJob = {
+        id: `cron-${crypto.randomUUID().slice(0, 8)}`,
+        name: values.name,
+        description: values.description || "",
+        expression,
+        status: "active",
+        nextRun: values.scheduleType === "once" && values.runAt
+          ? new Date(values.runAt).toISOString()
+          : new Date(Date.now() + 3_600_000).toISOString(),
+        runCount: 0,
+        failCount: 0,
+        createdAt: now,
+        agentId: values.agentId || undefined,
+        scheduleType: values.scheduleType as ScheduleType,
+        intervalMs,
+        runAt: values.runAt || undefined,
+        sessionType: values.sessionType as "isolated" | "main",
+        prompt: values.prompt || undefined,
+        model: values.model || undefined,
+        deliveryMode: values.deliveryMode as DeliveryMode,
+        deliveryChannel: values.deliveryChannel
+          ? (values.deliveryChannel as CronJob["deliveryChannel"])
+          : undefined,
+        webhookUrl: values.webhookUrl || undefined,
+        timeout: values.timeout ? parseInt(values.timeout, 10) : undefined,
+        maxRetries: values.maxRetries ? parseInt(values.maxRetries, 10) : undefined,
+        timezone: values.timezone || undefined,
+        deleteAfterRun: values.deleteAfterRun || undefined,
+        lightContext: values.lightContext || undefined,
+      };
 
-    addJob(newJob);
-    toast.success("Cron job created successfully");
-    useNotificationStore.getState().addNotification({ type: "success", title: "Cron job created", message: newJob.name });
+      addJob(newJob);
+      toast.success("Cron job created successfully");
+      useNotificationStore.getState().addNotification({ type: "success", title: "Cron job created", message: newJob.name });
+    }
+
     handleClose(false);
   }
 
@@ -230,20 +316,20 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
       <SheetContent
         side="right"
         showCloseButton={true}
-        className="w-[640px] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
+        className="w-[var(--sheet-width-wide)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
-        <SheetTitle className="sr-only">New Cron Job</SheetTitle>
+        <SheetTitle className="sr-only">{isEditing ? "Edit Cron Job" : "New Cron Job"}</SheetTitle>
         <SheetDescription className="sr-only">
-          Create a new scheduled cron job
+          {isEditing ? "Edit an existing cron job" : "Create a new scheduled cron job"}
         </SheetDescription>
 
         {/* Header */}
         <div className="border-b border-[var(--border-divider)] px-5 py-4 pr-12">
           <h2 className="text-base font-semibold text-[var(--content-primary)]">
-            New Cron Job
+            {isEditing ? "Edit Cron Job" : "New Cron Job"}
           </h2>
           <p className="text-xs text-[var(--content-muted)] mt-0.5">
-            Schedule an automated task for your agents
+            {isEditing ? "Update cron job configuration" : "Schedule an automated task for your agents"}
           </p>
         </div>
 
@@ -842,7 +928,7 @@ export function AddCronJobSheet({ open, onOpenChange }: AddCronJobSheetProps) {
               type="submit"
               className="w-full flex items-center justify-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
-              Create Cron Job
+              {isEditing ? "Save Changes" : "Create Cron Job"}
             </button>
           </div>
         </form>

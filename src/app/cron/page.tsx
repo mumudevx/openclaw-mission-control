@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Clock, Play, Pause, Trash2, Plus, Timer, AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -9,12 +10,17 @@ import { CronBadge } from "@/components/shared/cron-badge";
 import dynamic from "next/dynamic";
 
 const AddCronJobSheet = dynamic(() => import("@/components/cron/add-cron-job-sheet").then((m) => m.AddCronJobSheet));
+const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { useCronStore } from "@/stores/cronStore";
 import { mockCronJobs } from "@/lib/mock/data";
+import type { CronJob } from "@/types";
 
 export default function CronPage() {
   const [addJobOpen, setAddJobOpen] = useState(false);
-  const { jobs, setJobs } = useCronStore();
+  const [editJob, setEditJob] = useState<CronJob | undefined>(undefined);
+  const [deleteJob, setDeleteJob] = useState<CronJob | null>(null);
+
+  const { jobs, setJobs, updateJob, removeJob } = useCronStore();
 
   const initialized = useRef(false);
   React.useEffect(() => {
@@ -27,6 +33,14 @@ export default function CronPage() {
   const activeCount = jobs.filter((j) => j.status === "active").length;
   const runningCount = jobs.filter((j) => j.status === "running").length;
   const failedCount = jobs.filter((j) => j.status === "failed").length;
+
+  const confirmDelete = () => {
+    if (deleteJob) {
+      removeJob(deleteJob.id);
+      toast.success("Cron job deleted");
+      setDeleteJob(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -73,6 +87,7 @@ export default function CronPage() {
             return (
               <div
                 key={job.id}
+                onClick={() => setEditJob(job)}
                 className="grid grid-cols-12 items-center px-6 py-4 hover:bg-[var(--surface-card-alt)] transition-colors cursor-pointer"
               >
                 <div className="col-span-3">
@@ -95,14 +110,28 @@ export default function CronPage() {
                   {job.runCount}
                 </div>
                 <div className="col-span-1 flex gap-1">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] transition-colors">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newStatus = job.status === "active" ? "paused" : "active";
+                      updateJob(job.id, { status: newStatus });
+                      toast.success(newStatus === "paused" ? "Job paused" : "Job resumed");
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] transition-colors"
+                  >
                     {job.status === "active" ? (
                       <Pause className="h-3.5 w-3.5" strokeWidth={1.5} />
                     ) : (
                       <Play className="h-3.5 w-3.5" strokeWidth={1.5} />
                     )}
                   </button>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-red-50 hover:text-red-500 transition-colors">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteJob(job);
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
                 </div>
@@ -112,7 +141,24 @@ export default function CronPage() {
         </div>
       </div>
 
-      <AddCronJobSheet open={addJobOpen} onOpenChange={setAddJobOpen} />
+      <AddCronJobSheet
+        open={addJobOpen || !!editJob}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddJobOpen(false);
+            setEditJob(undefined);
+          }
+        }}
+        job={editJob}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deleteJob}
+        onOpenChange={(open) => { if (!open) setDeleteJob(null); }}
+        onConfirm={confirmDelete}
+        entityName={deleteJob?.name ?? ""}
+        entityType="cron job"
+      />
     </div>
   );
 }
