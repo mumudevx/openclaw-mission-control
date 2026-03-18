@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { mockCalendarEvents } from "@/lib/mock/data";
+import { useCalendarStore } from "@/stores/calendarStore";
 import dynamic from "next/dynamic";
 import { MonthView } from "@/components/calendar/month-view";
 
 const WeekView = dynamic(() => import("@/components/calendar/week-view").then((m) => m.WeekView));
 const DayView = dynamic(() => import("@/components/calendar/day-view").then((m) => m.DayView));
 const AddEventSheet = dynamic(() => import("@/components/calendar/add-event-sheet").then((m) => m.AddEventSheet));
+const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { WEEK_STARTS_ON } from "@/components/calendar/constants";
+import type { CalendarEvent } from "@/types";
 
 type View = "month" | "week" | "day";
 
@@ -33,7 +37,17 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>("month");
   const [addEventOpen, setAddEventOpen] = useState(false);
-  const events = mockCalendarEvents;
+  const [editEvent, setEditEvent] = useState<CalendarEvent | undefined>(undefined);
+  const [deleteEvent, setDeleteEvent] = useState<CalendarEvent | null>(null);
+
+  const { events, setEvents, removeEvent } = useCalendarStore();
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true;
+      setEvents(mockCalendarEvents);
+    }
+  }, [setEvents]);
 
   const navigate = (direction: 1 | -1) => {
     switch (view) {
@@ -52,6 +66,23 @@ export default function CalendarPage() {
   const handleDayClick = (day: Date) => {
     setCurrentDate(day);
     setView("day");
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setEditEvent(event);
+  };
+
+  const handleDeleteFromSheet = (event: CalendarEvent) => {
+    setEditEvent(undefined);
+    setDeleteEvent(event);
+  };
+
+  const confirmDelete = () => {
+    if (deleteEvent) {
+      removeEvent(deleteEvent.id);
+      toast.success("Event deleted");
+      setDeleteEvent(null);
+    }
   };
 
   return (
@@ -108,15 +139,30 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {view === "month" && <MonthView currentDate={currentDate} events={events} onDayClick={handleDayClick} />}
-        {view === "week" && <WeekView currentDate={currentDate} events={events} onDayClick={handleDayClick} />}
-        {view === "day" && <DayView currentDate={currentDate} events={events} />}
+        {view === "month" && <MonthView currentDate={currentDate} events={events} onDayClick={handleDayClick} onEventClick={handleEventClick} />}
+        {view === "week" && <WeekView currentDate={currentDate} events={events} onDayClick={handleDayClick} onEventClick={handleEventClick} />}
+        {view === "day" && <DayView currentDate={currentDate} events={events} onEventClick={handleEventClick} />}
       </div>
 
       <AddEventSheet
-        open={addEventOpen}
-        onOpenChange={setAddEventOpen}
+        open={addEventOpen || !!editEvent}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddEventOpen(false);
+            setEditEvent(undefined);
+          }
+        }}
         defaultDate={currentDate}
+        event={editEvent}
+        onDelete={handleDeleteFromSheet}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deleteEvent}
+        onOpenChange={(open) => { if (!open) setDeleteEvent(null); }}
+        onConfirm={confirmDelete}
+        entityName={deleteEvent?.title ?? ""}
+        entityType="event"
       />
     </div>
   );

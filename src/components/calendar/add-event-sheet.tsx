@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Pencil, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -23,7 +24,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNotificationStore } from "@/stores/notificationStore";
-import type { EventType } from "@/types";
+import { useCalendarStore } from "@/stores/calendarStore";
+import type { CalendarEvent, EventType } from "@/types";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -42,6 +44,8 @@ interface AddEventSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultDate?: Date;
+  event?: CalendarEvent;
+  onDelete?: (event: CalendarEvent) => void;
 }
 
 const eventTypes: { value: EventType; label: string }[] = [
@@ -52,7 +56,8 @@ const eventTypes: { value: EventType; label: string }[] = [
   { value: "cron", label: "Cron Job" },
 ];
 
-export function AddEventSheet({ open, onOpenChange, defaultDate }: AddEventSheetProps) {
+export function AddEventSheet({ open, onOpenChange, defaultDate, event, onDelete }: AddEventSheetProps) {
+  const isEditing = !!event;
   const dateStr = defaultDate ? format(defaultDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
 
   const form = useForm<EventFormValues>({
@@ -69,13 +74,63 @@ export function AddEventSheet({ open, onOpenChange, defaultDate }: AddEventSheet
     },
   });
 
+  useEffect(() => {
+    if (event && open) {
+      const start = new Date(event.startDate);
+      form.reset({
+        title: event.title,
+        description: event.description || "",
+        type: event.type,
+        startDate: format(start, "yyyy-MM-dd"),
+        startTime: event.allDay ? "09:00" : format(start, "HH:mm"),
+        endDate: event.endDate ? format(new Date(event.endDate), "yyyy-MM-dd") : "",
+        endTime: event.endDate && !event.allDay ? format(new Date(event.endDate), "HH:mm") : "",
+        allDay: event.allDay,
+      });
+    }
+  }, [event, open, form]);
+
   const allDay = form.watch("allDay");
 
   const addNotification = useNotificationStore((s) => s.addNotification);
+  const { addEvent, updateEvent } = useCalendarStore();
 
   const onSubmit = (data: EventFormValues) => {
-    toast.success(`Event "${data.title}" created`);
-    addNotification({ type: "success", title: `Event "${data.title}" created`, message: `${data.startDate} ${data.allDay ? "(all day)" : data.startTime}` });
+    const startISO = data.allDay
+      ? `${data.startDate}T00:00:00`
+      : `${data.startDate}T${data.startTime}:00`;
+    const endISO = data.endDate
+      ? data.allDay
+        ? `${data.endDate}T23:59:59`
+        : `${data.endDate}T${data.endTime || "23:59"}:00`
+      : undefined;
+
+    if (isEditing) {
+      updateEvent(event.id, {
+        title: data.title,
+        description: data.description || undefined,
+        type: data.type,
+        startDate: startISO,
+        endDate: endISO,
+        allDay: data.allDay,
+      });
+      toast.success("Event updated");
+      addNotification({ type: "success", title: "Event updated", message: data.title });
+    } else {
+      const newEvent: CalendarEvent = {
+        id: `evt-${crypto.randomUUID().slice(0, 8)}`,
+        title: data.title,
+        description: data.description || undefined,
+        type: data.type,
+        startDate: startISO,
+        endDate: endISO,
+        allDay: data.allDay,
+      };
+      addEvent(newEvent);
+      toast.success(`Event "${data.title}" created`);
+      addNotification({ type: "success", title: `Event "${data.title}" created`, message: `${data.startDate} ${data.allDay ? "(all day)" : data.startTime}` });
+    }
+
     form.reset();
     onOpenChange(false);
   };
@@ -90,20 +145,39 @@ export function AddEventSheet({ open, onOpenChange, defaultDate }: AddEventSheet
       <SheetContent
         side="right"
         showCloseButton={true}
-        className="w-[480px] max-w-[90vw] !sm:max-w-none p-0 flex flex-col"
+        className="w-[var(--sheet-width)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
-        <SheetTitle className="sr-only">New Event</SheetTitle>
-        <SheetDescription className="sr-only">Create a new calendar event</SheetDescription>
+        <SheetTitle className="sr-only">{isEditing ? "Edit Event" : "New Event"}</SheetTitle>
+        <SheetDescription className="sr-only">
+          {isEditing ? "Edit an existing calendar event" : "Create a new calendar event"}
+        </SheetDescription>
 
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[var(--border-divider)] px-5 py-4 pr-12">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-light)]">
-            <CalendarDays className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            {isEditing ? (
+              <Pencil className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            ) : (
+              <CalendarDays className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            )}
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-[var(--content-primary)]">New Event</h2>
-            <p className="text-xs text-[var(--content-muted)]">Add an event to the calendar</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-semibold text-[var(--content-primary)]">
+              {isEditing ? "Edit Event" : "New Event"}
+            </h2>
+            <p className="text-xs text-[var(--content-muted)]">
+              {isEditing ? "Update event details" : "Add an event to the calendar"}
+            </p>
           </div>
+          {isEditing && onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(event)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-red-50 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          )}
         </div>
 
         {/* Form */}
@@ -228,7 +302,7 @@ export function AddEventSheet({ open, onOpenChange, defaultDate }: AddEventSheet
               type="submit"
               className="rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
-              Create Event
+              {isEditing ? "Save Changes" : "Create Event"}
             </button>
           </div>
         </form>

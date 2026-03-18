@@ -14,6 +14,7 @@ import { HOUR_HEIGHT, eventTypeBorderColors, getEventsForDay } from "./constants
 interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 function CurrentTimeIndicator() {
@@ -27,7 +28,7 @@ function CurrentTimeIndicator() {
   );
 }
 
-function EventBlock({ event }: { event: CalendarEvent }) {
+function EventBlock({ event, onClick }: { event: CalendarEvent; onClick?: () => void }) {
   const start = new Date(event.startDate);
   const end = event.endDate ? new Date(event.endDate) : null;
   const startHour = getHours(start);
@@ -41,7 +42,8 @@ function EventBlock({ event }: { event: CalendarEvent }) {
 
   return (
     <div
-      className={`absolute left-1 right-4 z-10 overflow-hidden rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)]/90 px-3 py-2 shadow-sm`}
+      onClick={onClick}
+      className={`absolute left-1 right-4 z-10 overflow-hidden rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)]/90 px-3 py-2 shadow-sm cursor-pointer hover:opacity-80`}
       style={{ top, height }}
     >
       <p className="truncate text-sm font-medium text-[var(--content-primary)]">
@@ -60,7 +62,7 @@ function EventBlock({ event }: { event: CalendarEvent }) {
   );
 }
 
-export function DayView({ currentDate, events }: DayViewProps) {
+export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dayEvents = getEventsForDay(events, currentDate);
   const allDayEvents = dayEvents.filter((e) => e.allDay);
@@ -92,7 +94,8 @@ export function DayView({ currentDate, events }: DayViewProps) {
               return (
                 <span
                   key={event.id}
-                  className={`inline-block truncate rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)] px-3 py-1 text-xs font-medium text-[var(--content-primary)] shadow-sm`}
+                  onClick={() => onEventClick?.(event)}
+                  className={`inline-block truncate rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)] px-3 py-1 text-xs font-medium text-[var(--content-primary)] shadow-sm cursor-pointer hover:opacity-80`}
                 >
                   {event.title}
                 </span>
@@ -129,7 +132,7 @@ export function DayView({ currentDate, events }: DayViewProps) {
 
             {/* Events */}
             {timedEvents.map((event) => (
-              <EventBlock key={event.id} event={event} />
+              <EventBlock key={event.id} event={event} onClick={() => onEventClick?.(event)} />
             ))}
 
             {/* Current time line */}

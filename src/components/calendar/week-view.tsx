@@ -17,6 +17,7 @@ interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onDayClick: (day: Date) => void;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 function CurrentTimeIndicator() {
@@ -30,7 +31,7 @@ function CurrentTimeIndicator() {
   );
 }
 
-function EventBlock({ event }: { event: CalendarEvent }) {
+function EventBlock({ event, onClick }: { event: CalendarEvent; onClick?: () => void }) {
   const start = new Date(event.startDate);
   const end = event.endDate ? new Date(event.endDate) : null;
   const startHour = getHours(start);
@@ -44,7 +45,8 @@ function EventBlock({ event }: { event: CalendarEvent }) {
 
   return (
     <div
-      className={`absolute left-1 right-1 z-10 overflow-hidden rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)]/90 px-2 py-1 shadow-sm`}
+      onClick={onClick}
+      className={`absolute left-1 right-1 z-10 overflow-hidden rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)]/90 px-2 py-1 shadow-sm cursor-pointer hover:opacity-80`}
       style={{ top, height }}
     >
       <p className="truncate text-[11px] font-medium text-[var(--content-primary)]">
@@ -58,7 +60,7 @@ function EventBlock({ event }: { event: CalendarEvent }) {
   );
 }
 
-export function WeekView({ currentDate, events, onDayClick }: WeekViewProps) {
+export function WeekView({ currentDate, events, onDayClick, onEventClick }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const weekStart = startOfWeek(currentDate, { weekStartsOn: WEEK_STARTS_ON });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -121,7 +123,8 @@ export function WeekView({ currentDate, events, onDayClick }: WeekViewProps) {
                   return (
                     <span
                       key={event.id}
-                      className={`inline-block truncate rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[var(--content-primary)] shadow-sm`}
+                      onClick={(e) => { e.stopPropagation(); onEventClick?.(event); }}
+                      className={`inline-block truncate rounded-md border-l-[3px] ${borderColor} bg-[var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[var(--content-primary)] shadow-sm cursor-pointer hover:opacity-80`}
                     >
                       {event.title}
                     </span>
@@ -168,7 +171,7 @@ export function WeekView({ currentDate, events, onDayClick }: WeekViewProps) {
 
                   {/* Events */}
                   {dayEvents.map((event) => (
-                    <EventBlock key={event.id} event={event} />
+                    <EventBlock key={event.id} event={event} onClick={() => onEventClick?.(event)} />
                   ))}
 
                   {/* Current time line */}

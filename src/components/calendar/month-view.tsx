@@ -8,9 +8,10 @@ interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onDayClick: (day: Date) => void;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
-export function MonthView({ currentDate, events, onDayClick }: MonthViewProps) {
+export function MonthView({ currentDate, events, onDayClick, onEventClick }: MonthViewProps) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: WEEK_STARTS_ON });
@@ -53,7 +54,8 @@ export function MonthView({ currentDate, events, onDayClick }: MonthViewProps) {
                 {dayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
-                    className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${eventTypeColors[event.type]} bg-opacity-10`}
+                    onClick={(e) => { e.stopPropagation(); onEventClick?.(event); }}
+                    className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${eventTypeColors[event.type]} bg-opacity-10 cursor-pointer hover:opacity-80`}
                   >
                     <div className={`h-1.5 w-1.5 rounded-full ${eventTypeColors[event.type]}`} />
                     <span className="truncate text-[10px] font-medium text-[var(--content-primary)]">
