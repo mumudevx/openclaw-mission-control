@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface AuthStepProps {
+  adminExists?: boolean;
   onBack: () => void;
   onNext: () => void;
+  onSkip?: () => void;
 }
 
-export function AuthStep({ onBack, onNext }: AuthStepProps) {
+export function AuthStep({ adminExists, onBack, onNext, onSkip }: AuthStepProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,6 +66,20 @@ export function AuthStep({ onBack, onNext }: AuthStepProps) {
           Set up credentials to protect your Mission Control panel
         </p>
 
+        {adminExists && (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-medium text-green-800">
+                Admin account already configured
+              </p>
+              <p className="mt-0.5 text-sm text-green-700">
+                You can skip this step or create a new admin account to replace the existing one.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 space-y-4">
           <div>
             <label className="text-sm font-medium text-[var(--content-primary)]">
@@ -117,14 +133,25 @@ export function AuthStep({ onBack, onNext }: AuthStepProps) {
           >
             Back
           </button>
-          <button
-            onClick={handleNext}
-            disabled={loading || !username || !password || !confirmPassword}
-            className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Create Account
-          </button>
+          <div className="flex gap-2">
+            {adminExists && onSkip && (
+              <button
+                onClick={onSkip}
+                disabled={loading}
+                className="rounded-btn border border-[var(--border-default)] bg-[var(--surface-card)] px-5 py-2.5 text-sm font-medium text-[var(--content-secondary)] transition-colors hover:bg-[var(--surface-bg)] disabled:opacity-50"
+              >
+                Skip
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              disabled={loading || !username || !password || !confirmPassword}
+              className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Create Account
+            </button>
+          </div>
         </div>
       </div>
     </div>
