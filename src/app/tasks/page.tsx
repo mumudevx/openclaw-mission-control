@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -19,12 +19,16 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, Search, Filter, GripVertical } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
 import { mockTasks } from "@/lib/mock/data";
+import { useTaskStore } from "@/stores/taskStore";
 import dynamic from "next/dynamic";
 
 const TaskDetailSheet = dynamic(() => import("@/components/tasks/task-detail-sheet").then((m) => m.TaskDetailSheet));
+const AddTaskSheet = dynamic(() => import("@/components/tasks/add-task-sheet").then((m) => m.AddTaskSheet));
+const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import type { Task, TaskStatus } from "@/types";
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
@@ -175,8 +179,19 @@ function DroppableColumn({
 export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [editTask, setEditTask] = useState<Task | undefined>(undefined);
+  const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+
+  const { tasks, setTasks, moveTask, removeTask } = useTaskStore();
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true;
+      setTasks(mockTasks);
+    }
+  }, [setTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -213,18 +228,13 @@ export default function TasksPage() {
       const activeColumn = findColumnForTask(activeId);
       const overColumn =
         findColumnForTask(overId) ??
-        // If over a column drop zone (data-column attr), find matching column
         (columns.find((c) => c.id === overId)?.id ?? null);
 
       if (!activeColumn || !overColumn || activeColumn === overColumn) return;
 
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === activeId ? { ...t, status: overColumn } : t
-        )
-      );
+      moveTask(activeId, overColumn);
     },
-    [findColumnForTask]
+    [findColumnForTask, moveTask]
   );
 
   const handleDragEnd = useCallback(
@@ -243,28 +253,46 @@ export default function TasksPage() {
       const overColumn = findColumnForTask(overId);
 
       if (activeColumn && overColumn && activeColumn === overColumn) {
-        // Reorder within same column
-        setTasks((prev) => {
-          const columnTasks = prev.filter((t) => t.status === activeColumn);
-          const otherTasks = prev.filter((t) => t.status !== activeColumn);
-          const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
-          const newIndex = columnTasks.findIndex((t) => t.id === overId);
+        const columnTasks = tasks.filter((t) => t.status === activeColumn);
+        const otherTasks = tasks.filter((t) => t.status !== activeColumn);
+        const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
+        const newIndex = columnTasks.findIndex((t) => t.id === overId);
 
-          const reordered = [...columnTasks];
-          const [moved] = reordered.splice(oldIndex, 1);
-          reordered.splice(newIndex, 0, moved);
+        const reordered = [...columnTasks];
+        const [moved] = reordered.splice(oldIndex, 1);
+        reordered.splice(newIndex, 0, moved);
 
-          return [...otherTasks, ...reordered];
-        });
+        setTasks([...otherTasks, ...reordered]);
       }
     },
-    [findColumnForTask]
+    [findColumnForTask, tasks, setTasks]
   );
+
+  const handleEdit = (task: Task) => {
+    setSelectedTask(null);
+    setEditTask(task);
+  };
+
+  const handleDelete = (task: Task) => {
+    setSelectedTask(null);
+    setDeleteTask(task);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTask) {
+      removeTask(deleteTask.id);
+      toast.success("Task deleted");
+      setDeleteTask(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader title="Tasks" description="Manage tasks with drag & drop Kanban board">
-        <button className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <button
+          onClick={() => setAddTaskOpen(true)}
+          className="flex items-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+        >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
           New Task
         </button>
@@ -326,6 +354,27 @@ export default function TasksPage() {
         onOpenChange={(open) => {
           if (!open) setSelectedTask(null);
         }}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      <AddTaskSheet
+        open={addTaskOpen || !!editTask}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddTaskOpen(false);
+            setEditTask(undefined);
+          }
+        }}
+        task={editTask}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deleteTask}
+        onOpenChange={(open) => { if (!open) setDeleteTask(null); }}
+        onConfirm={confirmDelete}
+        entityName={deleteTask?.title ?? ""}
+        entityType="task"
       />
     </div>
   );

@@ -6,7 +6,9 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  Pencil,
   Tag,
+  Trash2,
   User,
 } from "lucide-react";
 import {
@@ -23,6 +25,8 @@ interface TaskDetailSheetProps {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -57,7 +61,7 @@ function getAgentName(agentId?: string): string | null {
   return mockAgents.find((a) => a.id === agentId)?.name ?? agentId;
 }
 
-export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetProps) {
+export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onDelete }: TaskDetailSheetProps) {
   if (!task) return null;
 
   const completedCount = task.subtasks.filter((s) => s.completed).length;
@@ -68,7 +72,7 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
       <SheetContent
         side="right"
         showCloseButton={true}
-        className="w-[520px] max-w-[90vw] !sm:max-w-none p-0 flex flex-col"
+        className="w-[var(--sheet-width)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
         <SheetTitle className="sr-only">{task.title}</SheetTitle>
         <SheetDescription className="sr-only">
@@ -77,11 +81,31 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
 
         {/* Header */}
         <div className="border-b border-[var(--border-divider)] px-5 py-4 pr-12">
-          <div className="flex items-center gap-2 mb-2">
-            <StatusBadge status={statusToVariant[task.status] || "neutral"} label={statusLabels[task.status]} />
-            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}>
-              {task.priority}
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <StatusBadge status={statusToVariant[task.status] || "neutral"} label={statusLabels[task.status]} />
+              <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}>
+                {task.priority}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(task)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] hover:text-[var(--content-primary)] transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(task)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-red-50 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
+              )}
+            </div>
           </div>
           <h2 className="text-lg font-semibold text-[var(--content-primary)]">
             {task.title}

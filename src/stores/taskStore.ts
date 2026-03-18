@@ -11,6 +11,7 @@ interface TaskState {
   tasks: Task[];
   filter: TaskFilter;
 
+  setTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   removeTask: (id: string) => void;
@@ -22,6 +23,7 @@ export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
   filter: {},
 
+  setTasks: (tasks) => set({ tasks }),
   addTask: (task) =>
     set((state) => ({ tasks: [...state.tasks, task] })),
 
