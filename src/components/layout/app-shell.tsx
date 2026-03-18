@@ -1,17 +1,24 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
 import { CommandPalette } from "./command-palette";
 
+const SHELL_EXCLUDED_PATHS = ["/login"];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isExcluded = SHELL_EXCLUDED_PATHS.includes(pathname);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    if (isExcluded) return;
     const mq = window.matchMedia("(max-width: 768px)");
     const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsMobile(e.matches);
@@ -23,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     onChange(mq);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, []);
+  }, [isExcluded]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -33,9 +40,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isExcluded) return;
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  }, [handleKeyDown, isExcluded]);
+
+  if (isExcluded) {
+    return <>{children}</>;
+  }
 
   const sidebarWidth = isMobile ? 0 : sidebarCollapsed ? 64 : 240;
 
