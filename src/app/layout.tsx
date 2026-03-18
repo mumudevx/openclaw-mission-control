@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { GatewayProvider } from "@/components/providers/gateway-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { SetupGuard } from "@/components/providers/setup-guard";
 import "./globals.css";
 
 const inter = Inter({
@@ -37,7 +38,9 @@ export default function RootLayout({
           <GatewayProvider>
             <ThemeProvider>
               <TooltipProvider>
-                <AppShell>{children}</AppShell>
+                <SetupGuard>
+                  <AppShell>{children}</AppShell>
+                </SetupGuard>
                 <Toaster />
               </TooltipProvider>
             </ThemeProvider>
