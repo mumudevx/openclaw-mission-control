@@ -606,7 +606,7 @@ export function AddCronJobSheet({ open, onOpenChange, job }: AddCronJobSheetProp
                 Agent
               </Label>
               <Select
-                value={form.watch("agentId") || undefined}
+                value={form.watch("agentId") ?? ""}
                 onValueChange={(val) =>
                   form.setValue("agentId", val as string, { shouldValidate: true })
                 }
@@ -698,7 +698,7 @@ export function AddCronJobSheet({ open, onOpenChange, job }: AddCronJobSheetProp
                       Model Override
                     </Label>
                     <Select
-                      value={form.watch("model") || undefined}
+                      value={form.watch("model") ?? ""}
                       onValueChange={(val) => form.setValue("model", val as string)}
                     >
                       <SelectTrigger className="w-full !h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
@@ -754,7 +754,7 @@ export function AddCronJobSheet({ open, onOpenChange, job }: AddCronJobSheetProp
                         Delivery Channel
                       </Label>
                       <Select
-                        value={form.watch("deliveryChannel") || undefined}
+                        value={form.watch("deliveryChannel") ?? ""}
                         onValueChange={(val) =>
                           form.setValue("deliveryChannel", val as string)
                         }
@@ -852,7 +852,7 @@ export function AddCronJobSheet({ open, onOpenChange, job }: AddCronJobSheetProp
                       Timezone
                     </Label>
                     <Select
-                      value={form.watch("timezone") || undefined}
+                      value={form.watch("timezone") ?? ""}
                       onValueChange={(val) =>
                         form.setValue("timezone", val as string)
                       }
