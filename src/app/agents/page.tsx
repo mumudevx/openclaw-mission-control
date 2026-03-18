@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Bot, Grid3X3, List, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -10,6 +11,7 @@ import dynamic from "next/dynamic";
 
 const AgentDetailSheet = dynamic(() => import("@/components/agents/agent-detail-sheet").then((m) => m.AgentDetailSheet));
 const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
+const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { useAgentStore } from "@/stores/agentStore";
 import { mockAgents } from "@/lib/mock/data";
 import type { Agent } from "@/types";
@@ -72,8 +74,10 @@ export default function AgentsPage() {
   const [search, setSearch] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
+  const [editAgent, setEditAgent] = useState<Agent | undefined>(undefined);
+  const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
 
-  const { agents, setAgents } = useAgentStore();
+  const { agents, setAgents, updateAgent, removeAgent } = useAgentStore();
 
   const initialized = useRef(false);
   React.useEffect(() => {
@@ -89,6 +93,31 @@ export default function AgentsPage() {
   const activeCount = agents.filter((a) => a.status === "active").length;
   const idleCount = agents.filter((a) => a.status === "idle").length;
   const totalTokens = agents.reduce((sum, a) => sum + a.tokenUsage.total, 0);
+
+  const handleEdit = (agent: Agent) => {
+    setSelectedAgent(null);
+    setEditAgent(agent);
+  };
+
+  const handleDelete = (agent: Agent) => {
+    setSelectedAgent(null);
+    setDeleteAgent(agent);
+  };
+
+  const handleToggleStatus = (agent: Agent) => {
+    const newStatus = agent.status === "active" ? "idle" : "active";
+    updateAgent(agent.id, { status: newStatus });
+    toast.success(`Agent ${newStatus === "active" ? "activated" : "deactivated"}`);
+    setSelectedAgent({ ...agent, status: newStatus });
+  };
+
+  const confirmDelete = () => {
+    if (deleteAgent) {
+      removeAgent(deleteAgent.id);
+      toast.success("Agent deleted");
+      setDeleteAgent(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -150,11 +179,28 @@ export default function AgentsPage() {
         onOpenChange={(open) => {
           if (!open) setSelectedAgent(null);
         }}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onToggleStatus={handleToggleStatus}
       />
 
       <AddAgentSheet
-        open={addAgentOpen}
-        onOpenChange={setAddAgentOpen}
+        open={addAgentOpen || !!editAgent}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddAgentOpen(false);
+            setEditAgent(undefined);
+          }
+        }}
+        agent={editAgent}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deleteAgent}
+        onOpenChange={(open) => { if (!open) setDeleteAgent(null); }}
+        onConfirm={confirmDelete}
+        entityName={deleteAgent?.name ?? ""}
+        entityType="agent"
       />
     </div>
   );

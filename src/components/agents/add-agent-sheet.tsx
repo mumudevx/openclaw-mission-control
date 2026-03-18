@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -87,11 +87,13 @@ type AddAgentFormValues = z.infer<typeof addAgentSchema>;
 interface AddAgentSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  agent?: Agent;
 }
 
-export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
+export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps) {
+  const isEditing = !!agent;
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const { agents, addAgent } = useAgentStore();
+  const { agents, addAgent, updateAgent } = useAgentStore();
 
   const form = useForm<AddAgentFormValues>({
     resolver: zodResolver(addAgentSchema),
@@ -119,6 +121,43 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
     name: "bindings",
   });
 
+  useEffect(() => {
+    if (agent && open) {
+      form.reset({
+        name: agent.name,
+        model: agent.model,
+        description: agent.description || "",
+        avatar: agent.avatar || "",
+        vibe: agent.vibe || "",
+        soul: agent.soul || "",
+        workspace: {
+          userMd: agent.workspace?.userMd || "",
+          agentsMd: agent.workspace?.agentsMd || "",
+          toolsMd: agent.workspace?.toolsMd || "",
+        },
+        sandbox: {
+          mode: agent.sandbox?.mode || "non-main",
+          scope: agent.sandbox?.scope || "agent",
+        },
+        fallbackModels: agent.fallbackModels?.join(", ") || "",
+        heartbeat: {
+          interval: agent.heartbeat?.interval || "",
+          target: agent.heartbeat?.target || "",
+        },
+        bindings: agent.bindings || [],
+      });
+
+      const hasAdvanced = !!(
+        agent.workspace?.userMd || agent.workspace?.agentsMd || agent.workspace?.toolsMd ||
+        (agent.sandbox && agent.sandbox.mode !== "non-main") ||
+        agent.fallbackModels?.length ||
+        agent.heartbeat?.interval ||
+        agent.bindings?.length
+      );
+      if (hasAdvanced) setShowAdvanced(true);
+    }
+  }, [agent, open, form]);
+
   function handleClose(isOpen: boolean) {
     if (!isOpen) {
       form.reset();
@@ -129,7 +168,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
 
   function onSubmit(values: AddAgentFormValues) {
     const nameExists = agents.some(
-      (a) => a.name.toLowerCase() === values.name.toLowerCase()
+      (a) => a.name.toLowerCase() === values.name.toLowerCase() && (!isEditing || a.id !== agent.id)
     );
     if (nameExists) {
       form.setError("name", {
@@ -139,37 +178,60 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
     }
 
     const now = new Date().toISOString();
-    const newAgent: Agent = {
-      id: `agent-${crypto.randomUUID().slice(0, 8)}`,
-      name: values.name,
-      model: values.model,
-      status: "idle",
-      description: values.description || "",
-      avatar: values.avatar || "",
-      tokenUsage: { prompt: 0, completion: 0, total: 0 },
-      costTotal: 0,
-      activeSessions: 0,
-      lastActive: now,
-      tasks: [],
-      createdAt: now,
-      updatedAt: now,
-      vibe: values.vibe || undefined,
-      soul: values.soul || undefined,
-      workspace: values.workspace,
-      sandbox: values.sandbox || { mode: "non-main", scope: "agent" },
-      fallbackModels: values.fallbackModels
-        ? values.fallbackModels
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : undefined,
-      heartbeat: values.heartbeat,
-      bindings: values.bindings?.length ? values.bindings : undefined,
-    };
 
-    addAgent(newAgent);
-    toast.success("Agent created successfully");
-    useNotificationStore.getState().addNotification({ type: "success", title: "Agent created", message: newAgent.name });
+    if (isEditing) {
+      updateAgent(agent.id, {
+        name: values.name,
+        model: values.model,
+        description: values.description || "",
+        avatar: values.avatar || "",
+        updatedAt: now,
+        vibe: values.vibe || undefined,
+        soul: values.soul || undefined,
+        workspace: values.workspace,
+        sandbox: values.sandbox || { mode: "non-main", scope: "agent" },
+        fallbackModels: values.fallbackModels
+          ? values.fallbackModels.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        heartbeat: values.heartbeat,
+        bindings: values.bindings?.length ? values.bindings : undefined,
+      });
+      toast.success("Agent updated");
+      useNotificationStore.getState().addNotification({ type: "success", title: "Agent updated", message: values.name });
+    } else {
+      const newAgent: Agent = {
+        id: `agent-${crypto.randomUUID().slice(0, 8)}`,
+        name: values.name,
+        model: values.model,
+        status: "idle",
+        description: values.description || "",
+        avatar: values.avatar || "",
+        tokenUsage: { prompt: 0, completion: 0, total: 0 },
+        costTotal: 0,
+        activeSessions: 0,
+        lastActive: now,
+        tasks: [],
+        createdAt: now,
+        updatedAt: now,
+        vibe: values.vibe || undefined,
+        soul: values.soul || undefined,
+        workspace: values.workspace,
+        sandbox: values.sandbox || { mode: "non-main", scope: "agent" },
+        fallbackModels: values.fallbackModels
+          ? values.fallbackModels
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : undefined,
+        heartbeat: values.heartbeat,
+        bindings: values.bindings?.length ? values.bindings : undefined,
+      };
+
+      addAgent(newAgent);
+      toast.success("Agent created successfully");
+      useNotificationStore.getState().addNotification({ type: "success", title: "Agent created", message: newAgent.name });
+    }
+
     handleClose(false);
   }
 
@@ -178,20 +240,20 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
       <SheetContent
         side="right"
         showCloseButton={true}
-        className="w-[640px] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
+        className="w-[var(--sheet-width-wide)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
-        <SheetTitle className="sr-only">Add New Agent</SheetTitle>
+        <SheetTitle className="sr-only">{isEditing ? "Edit Agent" : "Add New Agent"}</SheetTitle>
         <SheetDescription className="sr-only">
-          Create a new OpenClaw isolated agent
+          {isEditing ? "Edit an existing agent" : "Create a new OpenClaw isolated agent"}
         </SheetDescription>
 
         {/* Header */}
         <div className="border-b border-[var(--border-divider)] px-5 py-4 pr-12">
           <h2 className="text-base font-semibold text-[var(--content-primary)]">
-            Add New Agent
+            {isEditing ? "Edit Agent" : "Add New Agent"}
           </h2>
           <p className="text-xs text-[var(--content-muted)] mt-0.5">
-            Create a new OpenClaw isolated agent with its own workspace
+            {isEditing ? "Update agent configuration" : "Create a new OpenClaw isolated agent with its own workspace"}
           </p>
         </div>
 
@@ -630,7 +692,7 @@ export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
               type="submit"
               className="w-full flex items-center justify-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
-              Create Agent
+              {isEditing ? "Save Changes" : "Create Agent"}
             </button>
           </div>
         </form>

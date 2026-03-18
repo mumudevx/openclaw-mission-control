@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, MessageSquare, Activity, BarChart3, Settings } from "lucide-react";
+import { Bot, MessageSquare, Activity, BarChart3, Settings, Pencil, Power, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -19,12 +19,18 @@ interface AgentDetailSheetProps {
   agent: Agent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (agent: Agent) => void;
+  onDelete?: (agent: Agent) => void;
+  onToggleStatus?: (agent: Agent) => void;
 }
 
 export function AgentDetailSheet({
   agent,
   open,
   onOpenChange,
+  onEdit,
+  onDelete,
+  onToggleStatus,
 }: AgentDetailSheetProps) {
   if (!agent) return null;
 
@@ -40,7 +46,7 @@ export function AgentDetailSheet({
       <SheetContent
         side="right"
         showCloseButton={true}
-        className="w-[640px] max-w-[90vw] !sm:max-w-none p-0 flex flex-col"
+        className="w-[var(--sheet-width-wide)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
         <SheetTitle className="sr-only">{agent.name} Details</SheetTitle>
         <SheetDescription className="sr-only">
@@ -65,6 +71,36 @@ export function AgentDetailSheet({
             <p className="text-xs text-[var(--content-muted)] font-mono">
               {agent.model}
             </p>
+          </div>
+          <div className="flex items-center gap-1">
+            {onToggleStatus && (
+              <button
+                onClick={() => onToggleStatus(agent)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  agent.status === "active"
+                    ? "text-[var(--status-success)] hover:bg-green-50"
+                    : "text-[var(--content-muted)] hover:bg-[var(--surface-bg)]"
+                }`}
+              >
+                <Power className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </button>
+            )}
+            {onEdit && (
+              <button
+                onClick={() => onEdit(agent)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] hover:text-[var(--content-primary)] transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(agent)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-red-50 hover:text-red-500 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </div>
 
