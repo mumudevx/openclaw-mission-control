@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, MessageSquare, Activity, BarChart3, Settings, Pencil, Power, Trash2 } from "lucide-react";
+import { Bot, MessageSquare, Activity, BarChart3, FileText, Sparkles, Trash2, Star } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,32 +12,28 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { AgentChat } from "./agent-chat";
 import { AgentActivity } from "./agent-activity";
 import { AgentStats } from "./agent-stats";
-import { AgentConfig } from "./agent-config";
+import { AgentFiles } from "./agent-files";
+import { AgentSkills } from "./agent-skills";
 import type { Agent } from "@/types";
 
 interface AgentDetailSheetProps {
   agent: Agent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit?: (agent: Agent) => void;
   onDelete?: (agent: Agent) => void;
-  onToggleStatus?: (agent: Agent) => void;
 }
 
 export function AgentDetailSheet({
   agent,
   open,
   onOpenChange,
-  onEdit,
   onDelete,
-  onToggleStatus,
 }: AgentDetailSheetProps) {
   if (!agent) return null;
 
-  const statusMap: Record<string, "active" | "idle" | "error" | "offline"> = {
+  const statusMap: Record<string, "active" | "idle" | "offline"> = {
     active: "active",
     idle: "idle",
-    error: "error",
     offline: "offline",
   };
 
@@ -56,43 +52,27 @@ export function AgentDetailSheet({
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[var(--border-divider)] px-5 py-4 pr-12">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-light)]">
-            <Bot
-              className="h-5 w-5 text-[var(--accent-primary)]"
-              strokeWidth={1.5}
-            />
+            {agent.identity?.emoji ? (
+              <span className="text-lg">{agent.identity.emoji}</span>
+            ) : (
+              <Bot className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold text-[var(--content-primary)] truncate">
                 {agent.name}
               </h2>
-              <StatusBadge status={statusMap[agent.status] || "neutral"} />
+              {agent.isDefault && (
+                <Star className="h-3.5 w-3.5 shrink-0 fill-[var(--accent-primary)] text-[var(--accent-primary)]" />
+              )}
+              <StatusBadge status={statusMap[agent.status] || "offline"} />
             </div>
             <p className="text-xs text-[var(--content-muted)] font-mono">
-              {agent.model}
+              {agent.id}
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {onToggleStatus && (
-              <button
-                onClick={() => onToggleStatus(agent)}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                  agent.status === "active"
-                    ? "text-[var(--status-success)] hover:bg-green-50"
-                    : "text-[var(--content-muted)] hover:bg-[var(--surface-bg)]"
-                }`}
-              >
-                <Power className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </button>
-            )}
-            {onEdit && (
-              <button
-                onClick={() => onEdit(agent)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--content-muted)] hover:bg-[var(--surface-bg)] hover:text-[var(--content-primary)] transition-colors"
-              >
-                <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </button>
-            )}
             {onDelete && (
               <button
                 onClick={() => onDelete(agent)}
@@ -119,9 +99,13 @@ export function AgentDetailSheet({
               <BarChart3 className="h-3.5 w-3.5" strokeWidth={1.5} />
               Stats
             </TabsTrigger>
-            <TabsTrigger value="config" className="gap-1.5">
-              <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Config
+            <TabsTrigger value="skills" className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Skills
+            </TabsTrigger>
+            <TabsTrigger value="files" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Files
             </TabsTrigger>
           </TabsList>
 
@@ -134,8 +118,11 @@ export function AgentDetailSheet({
           <TabsContent value="stats" className="flex-1 overflow-y-auto">
             <AgentStats agent={agent} />
           </TabsContent>
-          <TabsContent value="config" className="flex-1 overflow-y-auto">
-            <AgentConfig agent={agent} />
+          <TabsContent value="skills" className="flex-1 overflow-y-auto">
+            <AgentSkills agent={agent} />
+          </TabsContent>
+          <TabsContent value="files" className="flex-1 overflow-y-auto">
+            <AgentFiles agent={agent} />
           </TabsContent>
         </Tabs>
       </SheetContent>

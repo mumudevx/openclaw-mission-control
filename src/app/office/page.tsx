@@ -35,13 +35,6 @@ export default function OfficePage() {
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <div className="h-2 w-2 rounded-full bg-red-400" />
-          <span className="text-[var(--content-secondary)]">Error:</span>
-          <span className="font-semibold text-[var(--content-primary)]">
-            {agents.filter((a) => a.status === "error").length}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
           <div className="h-2 w-2 rounded-full bg-gray-400" />
           <span className="text-[var(--content-secondary)]">Offline:</span>
           <span className="font-semibold text-[var(--content-primary)]">

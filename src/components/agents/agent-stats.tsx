@@ -1,19 +1,15 @@
 "use client";
 
-import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useSessionsList } from "@/hooks/useSessions";
-import type { Agent, AgentSessionStatus } from "@/types";
+import type { Agent, AgentSession } from "@/types";
 
-const sessionStatusMap: Record<
-  AgentSessionStatus,
-  { variant: "active" | "running" | "error" | "idle"; label: string }
-> = {
-  active: { variant: "running", label: "Active" },
-  completed: { variant: "active", label: "Completed" },
-  error: { variant: "error", label: "Error" },
-  idle: { variant: "idle", label: "Idle" },
-};
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
 
 function MiniStatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -26,43 +22,45 @@ function MiniStatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+const sessionStatusVariant: Record<string, "active" | "running" | "error" | "idle"> = {
+  running: "running",
+  done: "active",
+  failed: "error",
+  killed: "error",
+  timeout: "error",
+};
+
 export function AgentStats({ agent }: { agent: Agent }) {
   const { sessions: allSessions } = useSessionsList();
   const sessions = allSessions
     .filter((s) => s.agentId === agent.id)
-    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+
+  const totalInput = sessions.reduce((sum, s) => sum + (s.inputTokens ?? 0), 0);
+  const totalOutput = sessions.reduce((sum, s) => sum + (s.outputTokens ?? 0), 0);
+  const totalCost = sessions.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
 
   return (
     <div className="p-5 space-y-6">
       {/* Token & Cost grid */}
       <div>
         <h3 className="text-sm font-semibold text-[var(--content-primary)] mb-3">
-          Token Usage & Cost
+          Usage
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <MiniStatCard
-            label="Prompt Tokens"
-            value={`${(agent.tokenUsage.prompt / 1000).toFixed(1)}k`}
-          />
-          <MiniStatCard
-            label="Completion Tokens"
-            value={`${(agent.tokenUsage.completion / 1000).toFixed(1)}k`}
-          />
-          <MiniStatCard
-            label="Total Tokens"
-            value={`${(agent.tokenUsage.total / 1000).toFixed(1)}k`}
-          />
-          <MiniStatCard
-            label="Total Cost"
-            value={`$${agent.costTotal.toFixed(2)}`}
-          />
+          <MiniStatCard label="Input Tokens" value={formatTokens(totalInput)} />
+          <MiniStatCard label="Output Tokens" value={formatTokens(totalOutput)} />
+          <MiniStatCard label="Total Tokens" value={formatTokens(agent.totalTokens)} />
+          {totalCost > 0 && (
+            <MiniStatCard label="Estimated Cost" value={`$${totalCost.toFixed(2)}`} />
+          )}
         </div>
       </div>
 
       {/* Sessions list */}
       <div>
         <h3 className="text-sm font-semibold text-[var(--content-primary)] mb-3">
-          Sessions
+          Sessions ({sessions.length})
         </h3>
         {sessions.length === 0 ? (
           <p className="text-sm text-[var(--content-muted)] text-center py-4">
@@ -70,43 +68,50 @@ export function AgentStats({ agent }: { agent: Agent }) {
           </p>
         ) : (
           <div className="space-y-2">
-            {sessions.map((session) => {
-              const mapping = sessionStatusMap[session.status];
-              return (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <StatusBadge
-                      status={mapping.variant}
-                      label={mapping.label}
-                    />
-                    <div>
-                      <p className="text-xs text-[var(--content-secondary)]">
-                        {format(new Date(session.startedAt), "MMM d, HH:mm")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-right">
-                    <div>
-                      <p className="text-[11px] text-[var(--content-muted)]">Tokens</p>
-                      <p className="text-xs font-medium text-[var(--content-primary)]">
-                        {(session.tokensUsed / 1000).toFixed(1)}k
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-[var(--content-muted)]">Cost</p>
-                      <p className="text-xs font-medium text-[var(--content-primary)]">
-                        ${session.cost.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {sessions.map((session) => (
+              <SessionRow key={session.key} session={session} />
+            ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function SessionRow({ session }: { session: AgentSession }) {
+  const variant = sessionStatusVariant[session.status ?? ''] ?? "idle";
+  const label = session.status ?? "idle";
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <StatusBadge status={variant} label={label} />
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-[var(--content-primary)] truncate">
+            {session.displayName ?? session.key}
+          </p>
+          {session.updatedAt && (
+            <p className="text-[11px] text-[var(--content-muted)]">
+              {formatDistanceToNow(new Date(session.updatedAt), { addSuffix: true })}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4 text-right shrink-0">
+        {session.model && (
+          <div>
+            <p className="text-[11px] text-[var(--content-muted)]">Model</p>
+            <p className="text-xs font-medium text-[var(--content-primary)]">
+              {session.model}
+            </p>
+          </div>
+        )}
+        <div>
+          <p className="text-[11px] text-[var(--content-muted)]">Tokens</p>
+          <p className="text-xs font-medium text-[var(--content-primary)]">
+            {formatTokens(session.totalTokens ?? 0)}
+          </p>
+        </div>
       </div>
     </div>
   );

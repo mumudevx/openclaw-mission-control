@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Bot, Grid3X3, List, Plus, Search, Loader2 } from "lucide-react";
+import { Bot, Grid3X3, List, Plus, Search, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -12,16 +12,22 @@ import dynamic from "next/dynamic";
 const AgentDetailSheet = dynamic(() => import("@/components/agents/agent-detail-sheet").then((m) => m.AgentDetailSheet));
 const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
 const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
+import { SkillsBadge } from "@/components/agents/agent-skills";
 import { useAgentStore } from "@/stores/agentStore";
-import { useAgentsList, useUpdateAgent, useDeleteAgent, toBackendAgentCreate } from "@/hooks/useAgents";
+import { useAgentsList, useDeleteAgent } from "@/hooks/useAgents";
 import { useGatewayEvent } from "@/hooks/useGatewayEvent";
 import type { Agent } from "@/types";
 
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
 function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
-  const statusMap: Record<string, "active" | "idle" | "error" | "offline"> = {
+  const statusMap: Record<string, "active" | "idle" | "offline"> = {
     active: "active",
     idle: "idle",
-    error: "error",
     offline: "offline",
   };
 
@@ -30,41 +36,47 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-light)]">
-            <Bot className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            {agent.identity?.emoji ? (
+              <span className="text-lg">{agent.identity.emoji}</span>
+            ) : (
+              <Bot className="h-5 w-5 text-[var(--accent-primary)]" strokeWidth={1.5} />
+            )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-[var(--content-primary)]">{agent.name}</p>
-            <p className="text-xs text-[var(--content-muted)]">{agent.model}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-[var(--content-primary)]">{agent.name}</p>
+              {agent.isDefault && (
+                <Star className="h-3.5 w-3.5 fill-[var(--accent-primary)] text-[var(--accent-primary)]" />
+              )}
+            </div>
+            <p className="text-xs text-[var(--content-muted)]">{agent.id}</p>
+            <SkillsBadge agentId={agent.id} />
           </div>
         </div>
-        <StatusBadge status={statusMap[agent.status] || "neutral"} />
+        <StatusBadge status={statusMap[agent.status] || "offline"} />
       </div>
-
-      {agent.description && (
-        <p className="mt-3 text-xs text-[var(--content-secondary)] line-clamp-2">
-          {agent.description}
-        </p>
-      )}
 
       <div className="mt-4 flex items-center justify-between border-t border-[var(--border-divider)] pt-3">
         <div>
-          <p className="text-[11px] text-[var(--content-muted)]">Tokens</p>
-          <p className="text-sm font-semibold text-[var(--content-primary)]">
-            {(agent.tokenUsage.total / 1000).toFixed(1)}k
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] text-[var(--content-muted)]">Cost</p>
-          <p className="text-sm font-semibold text-[var(--content-primary)]">
-            ${agent.costTotal.toFixed(2)}
-          </p>
-        </div>
-        <div>
           <p className="text-[11px] text-[var(--content-muted)]">Sessions</p>
           <p className="text-sm font-semibold text-[var(--content-primary)]">
-            {agent.activeSessions}
+            {agent.sessionCount}
           </p>
         </div>
+        <div>
+          <p className="text-[11px] text-[var(--content-muted)]">Tokens</p>
+          <p className="text-sm font-semibold text-[var(--content-primary)]">
+            {formatTokens(agent.totalTokens)}
+          </p>
+        </div>
+        {agent.estimatedCost > 0 && (
+          <div>
+            <p className="text-[11px] text-[var(--content-muted)]">Cost</p>
+            <p className="text-sm font-semibold text-[var(--content-primary)]">
+              ${agent.estimatedCost.toFixed(2)}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -75,15 +87,12 @@ export default function AgentsPage() {
   const [search, setSearch] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
-  const [editAgent, setEditAgent] = useState<Agent | undefined>(undefined);
-  const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
+  const [deleteAgent, setDeleteAgentState] = useState<Agent | null>(null);
 
-  const { agents: storeAgents, updateAgent, removeAgent } = useAgentStore();
-  const { agents: liveAgents, isLoading, refetch } = useAgentsList();
-  const updateMutation = useUpdateAgent();
+  const { agents: storeAgents, removeAgent } = useAgentStore();
+  const { isLoading, refetch } = useAgentsList();
   const deleteMutation = useDeleteAgent();
 
-  // Use store agents (hydrated by useAgentsList hook)
   const agents = storeAgents;
 
   // Subscribe to real-time events
@@ -99,38 +108,16 @@ export default function AgentsPage() {
   useGatewayEvent("agent", handleAgentEvent);
 
   const filtered = agents.filter(
-    (a) => a.name.toLowerCase().includes(search.toLowerCase())
+    (a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const activeCount = agents.filter((a) => a.status === "active").length;
-  const idleCount = agents.filter((a) => a.status === "idle").length;
-  const totalTokens = agents.reduce((sum, a) => sum + a.tokenUsage.total, 0);
-
-  const handleEdit = (agent: Agent) => {
-    setSelectedAgent(null);
-    setEditAgent(agent);
-  };
+  const totalSessions = agents.reduce((sum, a) => sum + a.sessionCount, 0);
+  const totalTokens = agents.reduce((sum, a) => sum + a.totalTokens, 0);
 
   const handleDelete = (agent: Agent) => {
     setSelectedAgent(null);
-    setDeleteAgent(agent);
-  };
-
-  const handleToggleStatus = (agent: Agent) => {
-    const newStatus = agent.status === "active" ? "idle" : "active";
-    updateAgent(agent.id, { status: newStatus });
-    updateMutation.mutate(
-      { id: agent.id, status: newStatus },
-      {
-        onError: () => {
-          // Revert on error
-          updateAgent(agent.id, { status: agent.status });
-          toast.error("Failed to update agent status");
-        },
-      },
-    );
-    toast.success(`Agent ${newStatus === "active" ? "activated" : "deactivated"}`);
-    setSelectedAgent({ ...agent, status: newStatus });
+    setDeleteAgentState(agent);
   };
 
   const confirmDelete = () => {
@@ -146,7 +133,7 @@ export default function AgentsPage() {
         },
       );
       toast.success("Agent deleted");
-      setDeleteAgent(null);
+      setDeleteAgentState(null);
     }
   };
 
@@ -174,8 +161,8 @@ export default function AgentsPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Bot} label="Total Agents" value={agents.length} />
         <StatCard icon={Bot} label="Active" value={activeCount} />
-        <StatCard icon={Bot} label="Idle" value={idleCount} />
-        <StatCard icon={Bot} label="Total Tokens" value={`${(totalTokens / 1000).toFixed(0)}k`} />
+        <StatCard icon={Bot} label="Sessions" value={totalSessions} />
+        <StatCard icon={Bot} label="Total Tokens" value={formatTokens(totalTokens)} />
       </div>
 
       {/* Toolbar */}
@@ -206,7 +193,7 @@ export default function AgentsPage() {
       </div>
 
       {/* Agent grid */}
-      <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "space-y-3"}>
+      <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
         {filtered.map((agent) => (
           <AgentCard key={agent.id} agent={agent} onClick={() => setSelectedAgent(agent)} />
         ))}
@@ -218,25 +205,19 @@ export default function AgentsPage() {
         onOpenChange={(open) => {
           if (!open) setSelectedAgent(null);
         }}
-        onEdit={handleEdit}
         onDelete={handleDelete}
-        onToggleStatus={handleToggleStatus}
       />
 
       <AddAgentSheet
-        open={addAgentOpen || !!editAgent}
+        open={addAgentOpen}
         onOpenChange={(open) => {
-          if (!open) {
-            setAddAgentOpen(false);
-            setEditAgent(undefined);
-          }
+          if (!open) setAddAgentOpen(false);
         }}
-        agent={editAgent}
       />
 
       <ConfirmDeleteDialog
         open={!!deleteAgent}
-        onOpenChange={(open) => { if (!open) setDeleteAgent(null); }}
+        onOpenChange={(open) => { if (!open) setDeleteAgentState(null); }}
         onConfirm={confirmDelete}
         entityName={deleteAgent?.name ?? ""}
         entityType="agent"

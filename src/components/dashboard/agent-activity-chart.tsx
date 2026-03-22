@@ -18,8 +18,8 @@ interface AgentActivityChartProps {
 export function AgentActivityChart({ agents }: AgentActivityChartProps) {
   const data = agents.slice(0, 6).map((agent) => ({
     name: agent.name.length > 10 ? agent.name.slice(0, 10) + "…" : agent.name,
-    tokens: agent.tokenUsage.total,
-    cost: agent.costTotal,
+    tokens: agent.totalTokens,
+    sessions: agent.sessionCount,
   }));
 
   return (
