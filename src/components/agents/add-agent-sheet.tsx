@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNotificationStore } from "@/stores/notificationStore";
 import {
@@ -14,71 +14,27 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useAgentStore } from "@/stores/agentStore";
-import type { Agent } from "@/types";
+import { useCreateAgent, useAgentFileSave } from "@/hooks/useAgents";
+import { useQueryClient } from "@tanstack/react-query";
 
-const DEFAULT_MODELS = ['gpt-4', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet'];
-
-const BINDING_CHANNELS = [
-  "whatsapp",
-  "discord",
-  "slack",
-  "telegram",
-  "imessage",
-] as const;
+function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 const addAgentSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  model: z.string().min(1, "Model is required"),
-  description: z.string().optional(),
+  workspace: z.string().min(1, "Workspace path is required"),
+  emoji: z.string().optional(),
   avatar: z.string().optional(),
-  vibe: z.string().optional(),
-  soul: z.string().optional(),
-  workspace: z
-    .object({
-      userMd: z.string().optional(),
-      agentsMd: z.string().optional(),
-      toolsMd: z.string().optional(),
-    })
-    .optional(),
-  sandbox: z
-    .object({
-      mode: z.enum(["off", "non-main", "all"]),
-      scope: z.enum(["session", "agent", "shared"]),
-    })
-    .optional(),
-  fallbackModels: z.string().optional(),
-  heartbeat: z
-    .object({
-      interval: z.string().optional(),
-      target: z.string().optional(),
-    })
-    .optional(),
-  bindings: z
-    .array(
-      z.object({
-        channel: z.enum([
-          "whatsapp",
-          "discord",
-          "slack",
-          "telegram",
-          "imessage",
-        ]),
-        accountId: z.string().optional(),
-        peerId: z.string().optional(),
-      })
-    )
-    .optional(),
+  soulMd: z.string().optional(),
+  agentsMd: z.string().optional(),
+  userMd: z.string().optional(),
 });
 
 type AddAgentFormValues = z.infer<typeof addAgentSchema>;
@@ -86,154 +42,98 @@ type AddAgentFormValues = z.infer<typeof addAgentSchema>;
 interface AddAgentSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  agent?: Agent;
 }
 
-export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps) {
-  const isEditing = !!agent;
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const { agents, addAgent, updateAgent } = useAgentStore();
-  const knownModels = [...new Set(agents.map((a) => a.model))];
-  const AVAILABLE_MODELS = knownModels.length > 0 ? knownModels : DEFAULT_MODELS;
+export function AddAgentSheet({ open, onOpenChange }: AddAgentSheetProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [workspaceManuallyEdited, setWorkspaceManuallyEdited] = useState(false);
+  const createMutation = useCreateAgent();
+  const fileSaveMutation = useAgentFileSave();
+  const queryClient = useQueryClient();
 
   const form = useForm<AddAgentFormValues>({
     resolver: zodResolver(addAgentSchema),
     defaultValues: {
       name: "",
-      model: "",
-      description: "",
+      workspace: "",
+      emoji: "",
       avatar: "",
-      vibe: "",
-      soul: "",
-      workspace: { userMd: "", agentsMd: "", toolsMd: "" },
-      sandbox: { mode: "non-main", scope: "agent" },
-      fallbackModels: "",
-      heartbeat: { interval: "", target: "" },
-      bindings: [],
+      soulMd: "",
+      agentsMd: "",
+      userMd: "",
     },
   });
-
-  const {
-    fields: bindingFields,
-    append: appendBinding,
-    remove: removeBinding,
-  } = useFieldArray({
-    control: form.control,
-    name: "bindings",
-  });
-
-  useEffect(() => {
-    if (agent && open) {
-      form.reset({
-        name: agent.name,
-        model: agent.model,
-        description: agent.description || "",
-        avatar: agent.avatar || "",
-        vibe: agent.vibe || "",
-        soul: agent.soul || "",
-        workspace: {
-          userMd: agent.workspace?.userMd || "",
-          agentsMd: agent.workspace?.agentsMd || "",
-          toolsMd: agent.workspace?.toolsMd || "",
-        },
-        sandbox: {
-          mode: agent.sandbox?.mode || "non-main",
-          scope: agent.sandbox?.scope || "agent",
-        },
-        fallbackModels: agent.fallbackModels?.join(", ") || "",
-        heartbeat: {
-          interval: agent.heartbeat?.interval || "",
-          target: agent.heartbeat?.target || "",
-        },
-        bindings: agent.bindings || [],
-      });
-
-      const hasAdvanced = !!(
-        agent.workspace?.userMd || agent.workspace?.agentsMd || agent.workspace?.toolsMd ||
-        (agent.sandbox && agent.sandbox.mode !== "non-main") ||
-        agent.fallbackModels?.length ||
-        agent.heartbeat?.interval ||
-        agent.bindings?.length
-      );
-      if (hasAdvanced) setShowAdvanced(true);
-    }
-  }, [agent, open, form]);
 
   function handleClose(isOpen: boolean) {
     if (!isOpen) {
       form.reset();
-      setShowAdvanced(false);
+      setWorkspaceManuallyEdited(false);
+      setIsSubmitting(false);
     }
     onOpenChange(isOpen);
   }
 
-  function onSubmit(values: AddAgentFormValues) {
-    const nameExists = agents.some(
-      (a) => a.name.toLowerCase() === values.name.toLowerCase() && (!isEditing || a.id !== agent.id)
-    );
-    if (nameExists) {
-      form.setError("name", {
-        message: "An agent with this name already exists",
-      });
-      return;
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const name = e.target.value;
+    form.setValue("name", name);
+    if (!workspaceManuallyEdited) {
+      const slug = slugify(name);
+      form.setValue("workspace", slug ? `~/openclaw-agents/${slug}` : "");
     }
+  }
 
-    const now = new Date().toISOString();
-
-    if (isEditing) {
-      updateAgent(agent.id, {
+  async function onSubmit(values: AddAgentFormValues) {
+    setIsSubmitting(true);
+    try {
+      // Phase 1: Create the agent
+      const result = await createMutation.mutateAsync({
         name: values.name,
-        model: values.model,
-        description: values.description || "",
-        avatar: values.avatar || "",
-        updatedAt: now,
-        vibe: values.vibe || undefined,
-        soul: values.soul || undefined,
         workspace: values.workspace,
-        sandbox: values.sandbox || { mode: "non-main", scope: "agent" },
-        fallbackModels: values.fallbackModels
-          ? values.fallbackModels.split(",").map((s) => s.trim()).filter(Boolean)
-          : undefined,
-        heartbeat: values.heartbeat,
-        bindings: values.bindings?.length ? values.bindings : undefined,
+        emoji: values.emoji || undefined,
+        avatar: values.avatar || undefined,
       });
-      toast.success("Agent updated");
-      useNotificationStore.getState().addNotification({ type: "success", title: "Agent updated", message: values.name });
-    } else {
-      const newAgent: Agent = {
-        id: `agent-${crypto.randomUUID().slice(0, 8)}`,
-        name: values.name,
-        model: values.model,
-        status: "idle",
-        description: values.description || "",
-        avatar: values.avatar || "",
-        tokenUsage: { prompt: 0, completion: 0, total: 0 },
-        costTotal: 0,
-        activeSessions: 0,
-        lastActive: now,
-        tasks: [],
-        createdAt: now,
-        updatedAt: now,
-        vibe: values.vibe || undefined,
-        soul: values.soul || undefined,
-        workspace: values.workspace,
-        sandbox: values.sandbox || { mode: "non-main", scope: "agent" },
-        fallbackModels: values.fallbackModels
-          ? values.fallbackModels
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : undefined,
-        heartbeat: values.heartbeat,
-        bindings: values.bindings?.length ? values.bindings : undefined,
-      };
 
-      addAgent(newAgent);
-      toast.success("Agent created successfully");
-      useNotificationStore.getState().addNotification({ type: "success", title: "Agent created", message: newAgent.name });
+      const agentId = result.agentId;
+
+      // Phase 2: Write workspace files if provided
+      const fileWrites: Promise<unknown>[] = [];
+      if (values.soulMd?.trim()) {
+        fileWrites.push(
+          fileSaveMutation.mutateAsync({ agentId, name: "SOUL.md", content: values.soulMd }),
+        );
+      }
+      if (values.agentsMd?.trim()) {
+        fileWrites.push(
+          fileSaveMutation.mutateAsync({ agentId, name: "AGENTS.md", content: values.agentsMd }),
+        );
+      }
+      if (values.userMd?.trim()) {
+        fileWrites.push(
+          fileSaveMutation.mutateAsync({ agentId, name: "USER.md", content: values.userMd }),
+        );
+      }
+
+      if (fileWrites.length > 0) {
+        const results = await Promise.allSettled(fileWrites);
+        const failed = results.filter((r) => r.status === "rejected");
+        if (failed.length > 0) {
+          toast.warning("Agent created but some workspace files failed to save");
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["gateway", "agents.list"] });
+      toast.success("Agent created");
+      useNotificationStore.getState().addNotification({
+        type: "success",
+        title: "Agent created",
+        message: values.name,
+      });
+      handleClose(false);
+    } catch {
+      toast.error("Failed to create agent");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    handleClose(false);
   }
 
   return (
@@ -243,18 +143,18 @@ export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps)
         showCloseButton={true}
         className="w-[var(--sheet-width-wide)] max-w-[90vw] sm:!max-w-none p-0 flex flex-col"
       >
-        <SheetTitle className="sr-only">{isEditing ? "Edit Agent" : "Add New Agent"}</SheetTitle>
+        <SheetTitle className="sr-only">Add New Agent</SheetTitle>
         <SheetDescription className="sr-only">
-          {isEditing ? "Edit an existing agent" : "Create a new OpenClaw isolated agent"}
+          Create a new OpenClaw agent with its own workspace
         </SheetDescription>
 
         {/* Header */}
         <div className="border-b border-[var(--border-divider)] px-5 py-4 pr-12">
           <h2 className="text-base font-semibold text-[var(--content-primary)]">
-            {isEditing ? "Edit Agent" : "Add New Agent"}
+            Add New Agent
           </h2>
           <p className="text-xs text-[var(--content-muted)] mt-0.5">
-            {isEditing ? "Update agent configuration" : "Create a new OpenClaw isolated agent with its own workspace"}
+            Create a new agent with its own isolated workspace
           </p>
         </div>
 
@@ -264,425 +164,121 @@ export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps)
           className="flex-1 flex flex-col min-h-0"
         >
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-            {/* --- Basic Fields --- */}
-
             {/* Name */}
             <div className="space-y-1.5">
-              <Label
-                htmlFor="name"
-                className="text-xs font-medium text-[var(--content-secondary)]"
-              >
+              <Label htmlFor="name" className="text-xs font-medium text-[var(--content-secondary)]">
                 Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
-                placeholder="e.g., ResearchBot"
+                placeholder="e.g., research-bot"
                 className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
                 {...form.register("name")}
+                onChange={handleNameChange}
               />
               {form.formState.errors.name && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.name.message}
-                </p>
+                <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>
               )}
             </div>
 
-            {/* Model */}
+            {/* Workspace */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-[var(--content-secondary)]">
-                Model <span className="text-red-500">*</span>
+              <Label htmlFor="workspace" className="text-xs font-medium text-[var(--content-secondary)]">
+                Workspace Path <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={form.watch("model") || null}
-                onValueChange={(val) =>
-                  form.setValue("model", val as string, {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AVAILABLE_MODELS.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.model && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.model.message}
-                </p>
+              <Input
+                id="workspace"
+                placeholder="~/openclaw-agents/my-agent"
+                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
+                {...form.register("workspace")}
+                onChange={(e) => {
+                  form.setValue("workspace", e.target.value);
+                  setWorkspaceManuallyEdited(true);
+                }}
+              />
+              <p className="text-[11px] text-[var(--content-muted)]">
+                Absolute path on the server. ~ is expanded to home directory.
+              </p>
+              {form.formState.errors.workspace && (
+                <p className="text-xs text-red-500">{form.formState.errors.workspace.message}</p>
               )}
             </div>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="description"
-                className="text-xs font-medium text-[var(--content-secondary)]"
-              >
-                Description
-              </Label>
-              <Input
-                id="description"
-                placeholder="e.g., Autonomous research assistant for web scraping and summarization"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                {...form.register("description")}
-              />
+            {/* Identity row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Emoji */}
+              <div className="space-y-1.5">
+                <Label htmlFor="emoji" className="text-xs font-medium text-[var(--content-secondary)]">
+                  Emoji
+                </Label>
+                <Input
+                  id="emoji"
+                  placeholder="🤖"
+                  className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
+                  {...form.register("emoji")}
+                />
+              </div>
+
+              {/* Avatar URL */}
+              <div className="space-y-1.5">
+                <Label htmlFor="avatar" className="text-xs font-medium text-[var(--content-secondary)]">
+                  Avatar URL
+                </Label>
+                <Input
+                  id="avatar"
+                  placeholder="https://..."
+                  className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
+                  {...form.register("avatar")}
+                />
+              </div>
             </div>
 
-            {/* Avatar */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="avatar"
-                className="text-xs font-medium text-[var(--content-secondary)]"
-              >
-                Avatar
-              </Label>
-              <Input
-                id="avatar"
-                placeholder="e.g., 🤖"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                {...form.register("avatar")}
-              />
-            </div>
+            {/* Workspace Files Section */}
+            <div className="pt-2 border-t border-[var(--border-divider)]">
+              <h3 className="text-xs font-semibold text-[var(--content-muted)] uppercase tracking-wider mb-3">
+                Workspace Files (optional)
+              </h3>
 
-            {/* Vibe */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="vibe"
-                className="text-xs font-medium text-[var(--content-secondary)]"
-              >
-                Vibe
-              </Label>
-              <Input
-                id="vibe"
-                placeholder="e.g., Calm, precise, slightly formal"
-                className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                {...form.register("vibe")}
-              />
-              <p className="text-[11px] text-[var(--content-muted)]">
-                Behavioral tone shorthand from IDENTITY.md
-              </p>
-            </div>
+              {/* SOUL.md */}
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="soulMd" className="text-xs font-medium text-[var(--content-secondary)]">
+                  SOUL.md
+                </Label>
+                <Textarea
+                  id="soulMd"
+                  rows={4}
+                  placeholder="Defines the agent's personality, tone, and behavioral boundaries..."
+                  className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm min-h-[100px]"
+                  {...form.register("soulMd")}
+                />
+              </div>
 
-            {/* Soul Definition */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="soul"
-                className="text-xs font-medium text-[var(--content-secondary)]"
-              >
-                Soul Definition
-              </Label>
-              <Textarea
-                id="soul"
-                rows={6}
-                className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
-                {...form.register("soul")}
-              />
-              <p className="text-[11px] text-[var(--content-muted)]">
-                Defines the agent&apos;s personality, tone, and behavioral
-                boundaries. Written to SOUL.md and loaded at the start of every
-                session.
-              </p>
-            </div>
+              {/* AGENTS.md */}
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="agentsMd" className="text-xs font-medium text-[var(--content-secondary)]">
+                  AGENTS.md
+                </Label>
+                <Textarea
+                  id="agentsMd"
+                  rows={4}
+                  placeholder="Operating instructions and behavioral rules for the agent..."
+                  className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm min-h-[100px]"
+                  {...form.register("agentsMd")}
+                />
+              </div>
 
-            {/* --- Advanced Toggle --- */}
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--border-divider)]">
-              <Label
-                htmlFor="advanced-toggle"
-                className="text-sm font-medium text-[var(--content-primary)]"
-              >
-                Advanced Configuration
-              </Label>
-              <Switch
-                id="advanced-toggle"
-                checked={showAdvanced}
-                onCheckedChange={(checked) => setShowAdvanced(checked)}
-              />
-            </div>
-
-            {/* --- Advanced Fields (animated) --- */}
-            <div
-              className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-              style={{ gridTemplateRows: showAdvanced ? "1fr" : "0fr" }}
-            >
-              <div className="overflow-hidden">
-                <div className="space-y-4 pt-2">
-                  {/* Workspace Files Section */}
-                  <h3 className="text-xs font-semibold text-[var(--content-muted)] uppercase tracking-wider">
-                    Workspace Files
-                  </h3>
-
-                  {/* USER.md */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="userMd"
-                      className="text-xs font-medium text-[var(--content-secondary)]"
-                    >
-                      USER.md
-                    </Label>
-                    <Textarea
-                      id="userMd"
-                      rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
-                      {...form.register("workspace.userMd")}
-                    />
-                    <p className="text-[11px] text-[var(--content-muted)]">
-                      Context about the user this agent serves — role,
-                      preferences, and background that guides interactions.
-                    </p>
-                  </div>
-
-                  {/* AGENTS.md */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="agentsMd"
-                      className="text-xs font-medium text-[var(--content-secondary)]"
-                    >
-                      AGENTS.md
-                    </Label>
-                    <Textarea
-                      id="agentsMd"
-                      rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
-                      {...form.register("workspace.agentsMd")}
-                    />
-                    <p className="text-[11px] text-[var(--content-muted)]">
-                      Operating instructions and behavioral rules for the agent.
-                      Loaded at every session start.
-                    </p>
-                  </div>
-
-                  {/* TOOLS.md */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="toolsMd"
-                      className="text-xs font-medium text-[var(--content-secondary)]"
-                    >
-                      TOOLS.md
-                    </Label>
-                    <Textarea
-                      id="toolsMd"
-                      rows={4}
-                      className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm"
-                      {...form.register("workspace.toolsMd")}
-                    />
-                    <p className="text-[11px] text-[var(--content-muted)]">
-                      Documents available tools and usage conventions. Guidance
-                      only — doesn&apos;t control tool availability.
-                    </p>
-                  </div>
-
-                  {/* Sandbox Section */}
-                  <h3 className="text-xs font-semibold text-[var(--content-muted)] uppercase tracking-wider pt-2">
-                    Sandbox
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Sandbox Mode */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-[var(--content-secondary)]">
-                        Sandbox Mode
-                      </Label>
-                      <Select
-                        value={form.watch("sandbox.mode")}
-                        onValueChange={(val) =>
-                          form.setValue(
-                            "sandbox.mode",
-                            val as "off" | "non-main" | "all"
-                          )
-                        }
-                      >
-                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="off">off</SelectItem>
-                          <SelectItem value="non-main">non-main</SelectItem>
-                          <SelectItem value="all">all</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-[11px] text-[var(--content-muted)]">
-                        Controls file system isolation level. &apos;non-main&apos;
-                        sandboxes all agents except the default.
-                      </p>
-                    </div>
-
-                    {/* Sandbox Scope */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-[var(--content-secondary)]">
-                        Sandbox Scope
-                      </Label>
-                      <Select
-                        value={form.watch("sandbox.scope")}
-                        onValueChange={(val) =>
-                          form.setValue(
-                            "sandbox.scope",
-                            val as "session" | "agent" | "shared"
-                          )
-                        }
-                      >
-                        <SelectTrigger className="w-full h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="session">session</SelectItem>
-                          <SelectItem value="agent">agent</SelectItem>
-                          <SelectItem value="shared">shared</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-[11px] text-[var(--content-muted)]">
-                        Determines container boundary — per session, per agent,
-                        or shared across agents.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Model & Automation Section */}
-                  <h3 className="text-xs font-semibold text-[var(--content-muted)] uppercase tracking-wider pt-2">
-                    Model & Automation
-                  </h3>
-
-                  {/* Fallback Models */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="fallbackModels"
-                      className="text-xs font-medium text-[var(--content-secondary)]"
-                    >
-                      Fallback Models
-                    </Label>
-                    <Input
-                      id="fallbackModels"
-                      placeholder="e.g., gpt-4, claude-3-sonnet"
-                      className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                      {...form.register("fallbackModels")}
-                    />
-                    <p className="text-[11px] text-[var(--content-muted)]">
-                      Backup models used when the primary model is unavailable
-                      or rate-limited. Separate with commas.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Heartbeat Interval */}
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="heartbeatInterval"
-                        className="text-xs font-medium text-[var(--content-secondary)]"
-                      >
-                        Heartbeat Interval
-                      </Label>
-                      <Input
-                        id="heartbeatInterval"
-                        placeholder="e.g., 30m"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                        {...form.register("heartbeat.interval")}
-                      />
-                      <p className="text-[11px] text-[var(--content-muted)]">
-                        How often the agent checks in with a status update.
-                        Leave empty to disable.
-                      </p>
-                    </div>
-
-                    {/* Heartbeat Target */}
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="heartbeatTarget"
-                        className="text-xs font-medium text-[var(--content-secondary)]"
-                      >
-                        Heartbeat Target
-                      </Label>
-                      <Input
-                        id="heartbeatTarget"
-                        placeholder="e.g., #general"
-                        className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-card)]"
-                        {...form.register("heartbeat.target")}
-                      />
-                      <p className="text-[11px] text-[var(--content-muted)]">
-                        Channel or destination where heartbeat messages are
-                        delivered.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Routing Section */}
-                  <h3 className="text-xs font-semibold text-[var(--content-muted)] uppercase tracking-wider pt-2">
-                    Routing
-                  </h3>
-
-                  <div className="space-y-2">
-                    <p className="text-[11px] text-[var(--content-muted)]">
-                      Route incoming messages from specific channels or contacts
-                      to this agent.
-                    </p>
-
-                    {bindingFields.map((field, index) => (
-                      <div key={field.id} className="flex items-start gap-2">
-                        <div className="flex-1 grid grid-cols-3 gap-2">
-                          <Select
-                            value={form.watch(`bindings.${index}.channel`)}
-                            onValueChange={(val) =>
-                              form.setValue(
-                                `bindings.${index}.channel`,
-                                val as (typeof BINDING_CHANNELS)[number]
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-full h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs">
-                              <SelectValue placeholder="Channel" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BINDING_CHANNELS.map((ch) => (
-                                <SelectItem key={ch} value={ch}>
-                                  {ch}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            placeholder="Account ID"
-                            className="h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs"
-                            {...form.register(`bindings.${index}.accountId`)}
-                          />
-                          <Input
-                            placeholder="Peer ID"
-                            className="h-9 rounded-lg border-[var(--border-default)] bg-[var(--surface-card)] text-xs"
-                            {...form.register(`bindings.${index}.peerId`)}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeBinding(index)}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--content-muted)] hover:text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2
-                            className="h-3.5 w-3.5"
-                            strokeWidth={1.5}
-                          />
-                        </button>
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        appendBinding({
-                          channel: "whatsapp",
-                          accountId: "",
-                          peerId: "",
-                        })
-                      }
-                      className="flex items-center gap-1.5 text-xs font-medium text-[var(--accent-primary)] hover:text-[var(--accent-hover)] transition-colors"
-                    >
-                      <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      Add Binding
-                    </button>
-                  </div>
-                </div>
+              {/* USER.md */}
+              <div className="space-y-1.5">
+                <Label htmlFor="userMd" className="text-xs font-medium text-[var(--content-secondary)]">
+                  USER.md
+                </Label>
+                <Textarea
+                  id="userMd"
+                  rows={4}
+                  placeholder="Context about the user this agent serves — role, preferences, background..."
+                  className="rounded-xl border-[var(--border-default)] bg-[var(--surface-card)] font-mono text-sm min-h-[100px]"
+                  {...form.register("userMd")}
+                />
               </div>
             </div>
           </div>
@@ -691,9 +287,17 @@ export function AddAgentSheet({ open, onOpenChange, agent }: AddAgentSheetProps)
           <div className="border-t border-[var(--border-divider)] px-5 py-4">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 rounded-btn bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
-              {isEditing ? "Save Changes" : "Create Agent"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Agent"
+              )}
             </button>
           </div>
         </form>
