@@ -23,7 +23,7 @@ export function CompleteStep({ serverInfo, onFinish }: CompleteStepProps) {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-[var(--content-muted)]">Server</span>
-            <span className="font-medium text-[var(--content-primary)]">{serverInfo.name}</span>
+            <span className="font-medium text-[var(--content-primary)]">OpenClaw</span>
           </div>
           <div className="flex justify-between">
             <span className="text-[var(--content-muted)]">Version</span>

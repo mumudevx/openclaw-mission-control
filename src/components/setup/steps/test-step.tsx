@@ -91,7 +91,7 @@ export function TestStep({ url, token, onBack, onNext }: TestStepProps) {
                 <div className="w-full rounded-xl bg-[var(--surface-bg)] p-4 text-center">
                   <p className="text-xs text-[var(--content-muted)]">Server</p>
                   <p className="text-sm font-medium text-[var(--content-primary)]">
-                    {serverInfo.name} v{serverInfo.version}
+                    OpenClaw v{serverInfo.version}
                   </p>
                 </div>
               )}
