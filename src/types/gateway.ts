@@ -10,11 +10,11 @@ export type ChannelType =
 
 export type ChannelStatus = 'active' | 'inactive';
 
-export interface SystemResources {
-  cpu: number;
-  memory: { used: number; total: number };
-  disk: { used: number; total: number };
-  network: { in: number; out: number };
+export interface GatewayStats {
+  agentCount: number;
+  sessionCount: number;
+  channelCount: number;
+  heartbeatSeconds: number;
 }
 
 export interface Gateway {
@@ -24,7 +24,7 @@ export interface Gateway {
   uptime: number;
   connectedAt?: string;
   version: string;
-  resources: SystemResources;
+  stats: GatewayStats;
 }
 
 export interface Channel {

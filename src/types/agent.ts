@@ -1,44 +1,60 @@
-export type AgentStatus = 'active' | 'idle' | 'error' | 'offline';
-
-export interface TokenUsage {
-  prompt: number;
-  completion: number;
-  total: number;
-}
+export type AgentStatus = 'active' | 'idle' | 'offline';
 
 export interface Agent {
   id: string;
   name: string;
-  model: string;
+  isDefault: boolean;
+  identity?: {
+    name?: string;
+    theme?: string;
+    emoji?: string;
+    avatar?: string;
+    avatarUrl?: string;
+  };
+  // Derived from sessions
+  sessionCount: number;
+  totalTokens: number;
+  estimatedCost: number;
+  lastActive?: string;
+  // Derived from presence
   status: AgentStatus;
-  description: string;
-  avatar: string;
-  tokenUsage: TokenUsage;
-  costTotal: number;
-  activeSessions: number;
-  lastActive: string;
-  tasks: string[];
-  createdAt: string;
-  updatedAt: string;
-  vibe?: string;
-  soul?: string;
-  workspace?: AgentWorkspaceFiles;
-  sandbox?: AgentSandbox;
-  fallbackModels?: string[];
-  heartbeat?: AgentHeartbeat;
-  bindings?: AgentBinding[];
 }
 
-export type AgentSessionStatus = 'active' | 'idle' | 'completed' | 'error';
+export type AgentSessionStatus = 'running' | 'done' | 'failed' | 'killed' | 'timeout';
 
 export interface AgentSession {
-  id: string;
-  agentId: string;
-  status: AgentSessionStatus;
-  startedAt: string;
-  endedAt?: string;
-  tokensUsed: number;
-  cost: number;
+  key: string;
+  agentId?: string;
+  kind: 'direct' | 'group' | 'global' | 'unknown';
+  displayName?: string;
+  channel?: string;
+  model?: string;
+  status?: AgentSessionStatus;
+  updatedAt: number | null;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  estimatedCostUsd?: number;
+  startedAt?: number;
+  endedAt?: number;
+  runtimeMs?: number;
+}
+
+// Workspace file types (agents.files.* RPCs)
+export interface AgentWorkspaceFile {
+  name: string;
+  path: string;
+  size: number;
+  updatedAtMs: number;
+  missing: boolean;
+}
+
+export interface AgentFileContent {
+  name: string;
+  content: string;
+  size: number;
+  updatedAtMs: number;
+  missing?: boolean;
 }
 
 export type ChatMessageRole = 'user' | 'assistant' | 'system';
@@ -58,30 +74,4 @@ export interface AgentActivity {
   description: string;
   timestamp: string;
   metadata?: Record<string, string>;
-}
-
-export type SandboxMode = 'off' | 'non-main' | 'all';
-export type SandboxScope = 'session' | 'agent' | 'shared';
-export type BindingChannel = 'whatsapp' | 'discord' | 'slack' | 'telegram' | 'imessage';
-
-export interface AgentWorkspaceFiles {
-  userMd?: string;
-  agentsMd?: string;
-  toolsMd?: string;
-}
-
-export interface AgentSandbox {
-  mode: SandboxMode;
-  scope: SandboxScope;
-}
-
-export interface AgentHeartbeat {
-  interval?: string;
-  target?: string;
-}
-
-export interface AgentBinding {
-  channel: BindingChannel;
-  accountId?: string;
-  peerId?: string;
 }

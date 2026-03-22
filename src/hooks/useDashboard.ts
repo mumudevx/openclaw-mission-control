@@ -30,8 +30,9 @@ export function useDashboardStats() {
   const agentRows = agentsQuery.data?.agents ?? [];
   const sessionRows = sessionsQuery.data?.sessions ?? [];
 
+  const defaultId = agentsQuery.data?.defaultId;
   const agents = agentRows.map((row) =>
-    adaptAgent(row, sessionRows, gateway.snapshot.presence?.[row.id]),
+    adaptAgent(row, defaultId, sessionRows, gateway.snapshot.presence?.[row.id]),
   );
 
   const cronJobs = (cronQuery.data?.jobs ?? []).map(adaptCronJob);

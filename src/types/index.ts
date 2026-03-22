@@ -1,20 +1,14 @@
 export type {
   AgentStatus,
-  TokenUsage,
   Agent,
   AgentSessionStatus,
   AgentSession,
+  AgentWorkspaceFile,
+  AgentFileContent,
   ChatMessageRole,
   ChatMessage,
   ActivityType,
   AgentActivity,
-  SandboxMode,
-  SandboxScope,
-  BindingChannel,
-  AgentWorkspaceFiles,
-  AgentSandbox,
-  AgentHeartbeat,
-  AgentBinding,
 } from './agent';
 
 export type {
@@ -28,7 +22,7 @@ export type {
   GatewayStatus,
   ChannelType,
   ChannelStatus,
-  SystemResources,
+  GatewayStats,
   Gateway,
   Channel,
   WebSocketConnection,

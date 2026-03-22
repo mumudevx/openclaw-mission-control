@@ -19,6 +19,7 @@ interface PendingRequest {
   timer: ReturnType<typeof setTimeout>;
 }
 
+
 export class GatewayClient {
   private url = '';
   private token = '';
@@ -70,6 +71,7 @@ export class GatewayClient {
       this.socket.onmessage = (event: MessageEvent) => {
         try {
           const frame = JSON.parse(event.data as string) as Frame;
+
           this.handleFrame(frame);
         } catch {
           // Ignore malformed frames
@@ -132,6 +134,7 @@ export class GatewayClient {
         reject,
         timer,
       });
+
 
       this.socket!.send(JSON.stringify(frame));
     });

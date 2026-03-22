@@ -2,15 +2,20 @@ import type {
   GatewayAgentRow,
   GatewayCronJob,
   GatewaySessionRow,
-  GatewayChannelStatus,
   GatewayHealthResponse,
   GatewayLogEntry,
   PresenceEntry,
+  ChannelsStatusResponse,
+  ChannelAccountSnapshot,
+  ChannelMetaEntry,
+  ServerInfo,
+  Snapshot,
 } from './types';
 import type {
   Agent,
   AgentStatus,
   AgentSession,
+  AgentSessionStatus,
   CronJob,
   CronStatus,
   ScheduleType,
@@ -19,6 +24,7 @@ import type {
   ChannelStatus,
   Gateway,
   GatewayStatus,
+  GatewayStats,
   LogEntry,
   LogLevel,
   LogSource,
@@ -28,25 +34,33 @@ import type {
 // Agent adapter
 // ---------------------------------------------------------------------------
 
+/** Parse agent ID from session key like "agent:main:sender123" */
+function agentIdFromSessionKey(key: string): string | undefined {
+  const parts = key.split(':');
+  return parts.length >= 2 ? parts[1] : undefined;
+}
+
 export function adaptAgent(
   row: GatewayAgentRow,
+  defaultId: string | undefined,
   sessions: GatewaySessionRow[],
   presence?: PresenceEntry,
 ): Agent {
-  const agentSessions = sessions.filter((s) => s.agentId === row.id);
-  const activeSessions = agentSessions.filter((s) => s.status === 'active').length;
+  const agentSessions = sessions.filter(
+    (s) => agentIdFromSessionKey(s.key) === row.id,
+  );
+
+  const runningSessions = agentSessions.filter((s) => s.status === 'running').length;
 
   let status: AgentStatus = 'offline';
   if (presence?.online) {
-    status = activeSessions > 0 ? 'active' : 'idle';
-  } else if (activeSessions > 0) {
+    status = runningSessions > 0 ? 'active' : 'idle';
+  } else if (runningSessions > 0) {
     status = 'active';
   }
 
-  const inputTokens = agentSessions.reduce((sum, s) => sum + (s.inputTokens ?? 0), 0);
-  const outputTokens = agentSessions.reduce((sum, s) => sum + (s.outputTokens ?? 0), 0);
   const totalTokens = agentSessions.reduce((sum, s) => sum + (s.totalTokens ?? 0), 0);
-  const costTotal = agentSessions.reduce((sum, s) => sum + (s.cost ?? 0), 0);
+  const estimatedCost = agentSessions.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
 
   const lastSessionUpdate = agentSessions.reduce(
     (max, s) => Math.max(max, s.updatedAt ?? 0),
@@ -56,36 +70,15 @@ export function adaptAgent(
   return {
     id: row.id,
     name: row.identity?.name ?? row.name ?? row.id,
-    model: row.model ?? 'unknown',
-    status,
-    description: row.description ?? '',
-    avatar: row.identity?.avatarUrl ?? row.identity?.avatar ?? '/avatars/default.png',
-    tokenUsage: { prompt: inputTokens, completion: outputTokens, total: totalTokens },
-    costTotal,
-    activeSessions,
+    isDefault: row.id === defaultId,
+    identity: row.identity,
+    sessionCount: agentSessions.length,
+    totalTokens,
+    estimatedCost,
     lastActive: lastSessionUpdate
       ? new Date(lastSessionUpdate).toISOString()
-      : new Date().toISOString(),
-    tasks: [],
-    createdAt: row.createdAtMs
-      ? new Date(row.createdAtMs).toISOString()
-      : new Date().toISOString(),
-    updatedAt: row.updatedAtMs
-      ? new Date(row.updatedAtMs).toISOString()
-      : new Date().toISOString(),
-    vibe: row.vibe,
-    soul: row.soul,
-    workspace: row.workspace,
-    sandbox: row.sandbox
-      ? { mode: row.sandbox.mode as Agent['sandbox'] extends infer S ? S extends { mode: infer M } ? M : never : never, scope: row.sandbox.scope as Agent['sandbox'] extends infer S ? S extends { scope: infer SC } ? SC : never : never }
       : undefined,
-    fallbackModels: row.fallbackModels,
-    heartbeat: row.heartbeat,
-    bindings: row.bindings?.map((b) => ({
-      channel: b.channel as Agent['bindings'] extends (infer B)[] | undefined ? B extends { channel: infer C } ? C : never : never,
-      accountId: b.accountId,
-      peerId: b.peerId,
-    })),
+    status,
   };
 }
 
@@ -95,15 +88,21 @@ export function adaptAgent(
 
 export function adaptSession(row: GatewaySessionRow): AgentSession {
   return {
-    id: row.key,
-    agentId: row.agentId ?? '',
-    status: (row.status as AgentSession['status']) ?? 'active',
-    startedAt: row.startedAtMs
-      ? new Date(row.startedAtMs).toISOString()
-      : new Date().toISOString(),
-    endedAt: row.endedAtMs ? new Date(row.endedAtMs).toISOString() : undefined,
-    tokensUsed: row.totalTokens ?? 0,
-    cost: row.cost ?? 0,
+    key: row.key,
+    agentId: agentIdFromSessionKey(row.key),
+    kind: row.kind,
+    displayName: row.displayName ?? row.label,
+    channel: row.channel,
+    model: row.model,
+    status: (row.status as AgentSessionStatus) ?? undefined,
+    updatedAt: row.updatedAt,
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+    totalTokens: row.totalTokens,
+    estimatedCostUsd: row.estimatedCostUsd,
+    startedAt: row.startedAt,
+    endedAt: row.endedAt,
+    runtimeMs: row.runtimeMs,
   };
 }
 
@@ -171,17 +170,30 @@ export function adaptCronJob(row: GatewayCronJob): CronJob {
 // Channel adapter
 // ---------------------------------------------------------------------------
 
-export function adaptChannel(row: GatewayChannelStatus): Channel {
-  return {
-    id: row.id,
-    name: row.name,
-    type: row.type as ChannelType,
-    status: row.status as ChannelStatus,
-    connectedAt: row.connectedAt
-      ? new Date(row.connectedAt).toISOString()
-      : new Date().toISOString(),
-    messageCount: row.messageCount ?? 0,
-  };
+export function adaptChannelsFromStatus(response: ChannelsStatusResponse): Channel[] {
+  const meta = response.channelMeta ?? [];
+  const accounts = response.channelAccounts ?? {};
+  const channelSummaries = response.channels ?? {};
+
+  return meta.map((m: ChannelMetaEntry) => {
+    const accts = accounts[m.id] ?? [];
+    const summary = channelSummaries[m.id] as Record<string, unknown> | undefined;
+    const firstAcct: ChannelAccountSnapshot | undefined = accts[0];
+
+    const isRunning = firstAcct?.running ?? summary?.running === true;
+    const isConnected = firstAcct?.connected ?? summary?.connected === true;
+
+    return {
+      id: m.id,
+      name: m.label,
+      type: m.id as ChannelType,
+      status: (isRunning || isConnected ? 'active' : 'inactive') as ChannelStatus,
+      connectedAt: firstAcct?.lastStartAt
+        ? new Date(firstAcct.lastStartAt).toISOString()
+        : new Date().toISOString(),
+      messageCount: 0,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +204,8 @@ export function adaptHealth(
   health: GatewayHealthResponse,
   connectionState: string,
   url: string,
+  serverInfo?: ServerInfo | null,
+  snapshot?: Snapshot | null,
 ): Gateway {
   const statusMap: Record<string, GatewayStatus> = {
     connected: 'connected',
@@ -201,21 +215,28 @@ export function adaptHealth(
     disconnected: 'disconnected',
   };
 
+  const channelCount = health.channelOrder?.length
+    ?? (health.channels ? Object.keys(health.channels).length : 0);
+
+  const uptimeMs = snapshot?.uptimeMs ?? health.uptime ?? 0;
+
+  const stats: GatewayStats = {
+    agentCount: health.agents?.length ?? 0,
+    sessionCount: health.sessions?.count ?? 0,
+    channelCount,
+    heartbeatSeconds: health.heartbeatSeconds ?? 0,
+  };
+
   return {
     id: 'gw-live',
     url,
     status: statusMap[connectionState] ?? 'disconnected',
-    uptime: health.uptime ?? 0,
-    connectedAt: health.uptime
-      ? new Date(Date.now() - health.uptime * 1000).toISOString()
+    uptime: uptimeMs,
+    connectedAt: uptimeMs
+      ? new Date(Date.now() - uptimeMs).toISOString()
       : undefined,
-    version: health.version ?? 'unknown',
-    resources: {
-      cpu: health.resources?.cpu ?? 0,
-      memory: health.resources?.memory ?? { used: 0, total: 0 },
-      disk: health.resources?.disk ?? { used: 0, total: 0 },
-      network: health.resources?.network ?? { in: 0, out: 0 },
-    },
+    version: serverInfo?.version ?? health.version ?? 'unknown',
+    stats,
   };
 }
 
@@ -272,21 +293,32 @@ export function toBackendCronCreate(formData: Partial<CronJob>): Record<string, 
   };
 }
 
-export function toBackendAgentCreate(formData: Partial<Agent>): Record<string, unknown> {
+export function toBackendAgentCreate(formData: {
+  name: string;
+  workspace: string;
+  emoji?: string;
+  avatar?: string;
+}): Record<string, unknown> {
   return {
     name: formData.name,
-    model: formData.model,
-    description: formData.description,
-    identity: {
-      name: formData.name,
-      avatar: formData.avatar,
-    },
-    vibe: formData.vibe,
-    soul: formData.soul,
     workspace: formData.workspace,
-    sandbox: formData.sandbox,
-    fallbackModels: formData.fallbackModels,
-    heartbeat: formData.heartbeat,
-    bindings: formData.bindings,
+    ...(formData.emoji && { emoji: formData.emoji }),
+    ...(formData.avatar && { avatar: formData.avatar }),
+  };
+}
+
+export function toBackendAgentUpdate(formData: {
+  agentId: string;
+  name?: string;
+  workspace?: string;
+  model?: string;
+  avatar?: string;
+}): Record<string, unknown> {
+  return {
+    agentId: formData.agentId,
+    ...(formData.name && { name: formData.name }),
+    ...(formData.workspace && { workspace: formData.workspace }),
+    ...(formData.model && { model: formData.model }),
+    ...(formData.avatar && { avatar: formData.avatar }),
   };
 }

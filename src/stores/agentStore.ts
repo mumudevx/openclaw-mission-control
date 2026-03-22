@@ -5,7 +5,6 @@ type ViewMode = 'grid' | 'list';
 
 interface AgentFilter {
   status?: string;
-  model?: string;
 }
 
 interface AgentState {

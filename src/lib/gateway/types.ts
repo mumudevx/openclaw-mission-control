@@ -52,9 +52,8 @@ export interface StateVersion {
 }
 
 export interface ServerInfo {
-  name: string;
   version: string;
-  uptime?: number;
+  connId?: string;
 }
 
 export interface Features {
@@ -63,23 +62,14 @@ export interface Features {
 
 export interface Snapshot {
   presence?: Record<string, PresenceEntry>;
-  health?: HealthSnapshot;
+  uptimeMs?: number;
+  [key: string]: unknown;
 }
 
 export interface PresenceEntry {
   online: boolean;
   lastSeen?: number;
   activeSessions?: number;
-}
-
-export interface HealthSnapshot {
-  ok: boolean;
-  status: string;
-  cpu?: number;
-  memory?: { used: number; total: number };
-  disk?: { used: number; total: number };
-  network?: { in: number; out: number };
-  uptime?: number;
 }
 
 export interface Policy {
@@ -142,37 +132,13 @@ export interface ConnectParams {
 export interface GatewayAgentRow {
   id: string;
   name?: string;
-  model?: string;
-  description?: string;
   identity?: {
     name?: string;
+    theme?: string;
     emoji?: string;
     avatar?: string;
     avatarUrl?: string;
   };
-  vibe?: string;
-  soul?: string;
-  workspace?: {
-    userMd?: string;
-    agentsMd?: string;
-    toolsMd?: string;
-  };
-  sandbox?: {
-    mode?: string;
-    scope?: string;
-  };
-  fallbackModels?: string[];
-  heartbeat?: {
-    interval?: string;
-    target?: string;
-  };
-  bindings?: Array<{
-    channel: string;
-    accountId?: string;
-    peerId?: string;
-  }>;
-  createdAtMs?: number;
-  updatedAtMs?: number;
 }
 
 export interface GatewayCronSchedule {
@@ -223,19 +189,22 @@ export interface GatewayCronJob {
 
 export interface GatewaySessionRow {
   key: string;
+  kind: 'direct' | 'group' | 'global' | 'unknown';
   label?: string;
   displayName?: string;
   channel?: string;
-  agentId?: string;
+  subject?: string;
   model?: string;
-  updatedAt?: number;
+  modelProvider?: string;
+  updatedAt: number | null;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+  estimatedCostUsd?: number;
   status?: string;
-  cost?: number;
-  startedAtMs?: number;
-  endedAtMs?: number;
+  startedAt?: number;
+  endedAt?: number;
+  runtimeMs?: number;
 }
 
 export interface GatewayChannelStatus {
@@ -260,15 +229,28 @@ export interface GatewayLogEntry {
 
 export interface GatewayHealthResponse {
   ok: boolean;
-  status: string;
+  ts?: number;
+  durationMs?: number;
+  channels?: Record<string, unknown>;
+  channelOrder?: string[];
+  channelLabels?: Record<string, string>;
+  heartbeatSeconds?: number;
+  defaultAgentId?: string;
+  agents?: Array<{
+    agentId: string;
+    name?: string;
+    isDefault: boolean;
+    heartbeat?: unknown;
+    sessions?: { path: string; count: number };
+  }>;
+  sessions?: {
+    path: string;
+    count: number;
+    recent?: Array<{ key: string; updatedAt: number | null; age: number | null }>;
+  };
+  // Fields from snapshot (sent on initial connect)
   version?: string;
   uptime?: number;
-  resources?: {
-    cpu?: number;
-    memory?: { used: number; total: number };
-    disk?: { used: number; total: number };
-    network?: { in: number; out: number };
-  };
 }
 
 export interface GatewayUsageStatus {
@@ -282,9 +264,13 @@ export interface GatewayUsageStatus {
 export interface AgentsListResponse {
   agents: GatewayAgentRow[];
   defaultId?: string;
+  mainKey?: string;
+  scope?: string;
 }
 
 export interface SessionsListResponse {
+  ts?: number;
+  count?: number;
   sessions: GatewaySessionRow[];
 }
 
@@ -298,8 +284,108 @@ export interface LogsTailResponse {
   entries: GatewayLogEntry[];
 }
 
+export interface ChannelAccountSnapshot {
+  accountId: string;
+  enabled?: boolean | null;
+  configured?: boolean | null;
+  running?: boolean | null;
+  connected?: boolean | null;
+  lastStartAt?: number | null;
+  lastStopAt?: number | null;
+  lastError?: string | null;
+  lastInboundAt?: number | null;
+  lastOutboundAt?: number | null;
+  mode?: string | null;
+}
+
+export interface ChannelMetaEntry {
+  id: string;
+  label: string;
+  detailLabel?: string;
+  systemImage?: string;
+}
+
 export interface ChannelsStatusResponse {
-  channels: GatewayChannelStatus[];
+  ts: number;
+  channelOrder?: string[];
+  channelLabels?: Record<string, string>;
+  channelMeta?: ChannelMetaEntry[];
+  channels?: Record<string, Record<string, unknown>>;
+  channelAccounts?: Record<string, ChannelAccountSnapshot[]>;
+  channelDefaultAccountId?: Record<string, string>;
+}
+
+// Skills RPC responses
+export interface SkillStatusEntry {
+  name: string;
+  description: string;
+  source: string;
+  bundled: boolean;
+  emoji?: string;
+  homepage?: string;
+  primaryEnv?: string;
+  always: boolean;
+  disabled: boolean;
+  blockedByAllowlist: boolean;
+  eligible: boolean;
+  requirements: { bins?: string[]; envVars?: string[]; anyBins?: string[] };
+  missing: { bins?: string[]; envVars?: string[]; anyBins?: string[] };
+}
+
+export interface SkillsStatusResponse {
+  workspaceDir: string;
+  managedSkillsDir: string;
+  skills: SkillStatusEntry[];
+}
+
+export interface SkillsInstallResponse {
+  ok: boolean;
+  message: string;
+}
+
+export interface SkillsUpdateResponse {
+  ok: boolean;
+  skillKey: string;
+  config: {
+    enabled?: boolean;
+    apiKey?: string;
+    env?: Record<string, string>;
+  };
+}
+
+// Agent file RPC responses
+export interface AgentFilesListResponse {
+  files: Array<{
+    name: string;
+    path: string;
+    size: number;
+    updatedAtMs: number;
+    missing: boolean;
+  }>;
+}
+
+export interface AgentFileGetResponse {
+  agentId: string;
+  workspace: string;
+  file: {
+    name: string;
+    path: string;
+    missing: boolean;
+    size: number;
+    updatedAtMs: number;
+    content: string;
+  };
+}
+
+export interface AgentFileSetResponse {
+  ok: boolean;
+}
+
+export interface AgentCreateResponse {
+  ok: boolean;
+  agentId: string;
+  name: string;
+  workspace: string;
 }
 
 // Connection state for the client
