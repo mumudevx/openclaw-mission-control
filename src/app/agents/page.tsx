@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Bot, Grid3X3, List, Plus, Search, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
@@ -9,7 +10,6 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
 
-const AgentDetailSheet = dynamic(() => import("@/components/agents/agent-detail-sheet").then((m) => m.AgentDetailSheet));
 const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
 const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { SkillsBadge } from "@/components/agents/agent-skills";
@@ -83,9 +83,9 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
 }
 
 export default function AgentsPage() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
   const [deleteAgent, setDeleteAgentState] = useState<Agent | null>(null);
 
@@ -114,11 +114,6 @@ export default function AgentsPage() {
   const activeCount = agents.filter((a) => a.status === "active").length;
   const totalSessions = agents.reduce((sum, a) => sum + a.sessionCount, 0);
   const totalTokens = agents.reduce((sum, a) => sum + a.totalTokens, 0);
-
-  const handleDelete = (agent: Agent) => {
-    setSelectedAgent(null);
-    setDeleteAgentState(agent);
-  };
 
   const confirmDelete = () => {
     if (deleteAgent) {
@@ -195,18 +190,9 @@ export default function AgentsPage() {
       {/* Agent grid */}
       <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
         {filtered.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} onClick={() => setSelectedAgent(agent)} />
+          <AgentCard key={agent.id} agent={agent} onClick={() => router.push(`/agents/${agent.id}`)} />
         ))}
       </div>
-
-      <AgentDetailSheet
-        agent={selectedAgent}
-        open={!!selectedAgent}
-        onOpenChange={(open) => {
-          if (!open) setSelectedAgent(null);
-        }}
-        onDelete={handleDelete}
-      />
 
       <AddAgentSheet
         open={addAgentOpen}

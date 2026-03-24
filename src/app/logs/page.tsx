@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Search, Download, Pause, Play, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useLogStore } from "@/stores/logStore";
 import type { GatewayLogEntry, LogsTailResponse } from "@/lib/gateway";
 import type { LogLevel, LogEntry } from "@/types";
 import { useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 const levelColors: Record<LogLevel, string> = {
   debug: "text-gray-400",
@@ -42,6 +43,7 @@ function formatTimestamp(ts: string): string {
 }
 
 export default function LogsPage() {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<LogLevel[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -89,6 +91,20 @@ export default function LogsPage() {
     }
     return true;
   });
+
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 28,
+    overscan: 20,
+  });
+
+  // Auto-scroll to bottom when new logs arrive
+  useEffect(() => {
+    if (autoScroll && filtered.length > 0) {
+      rowVirtualizer.scrollToIndex(filtered.length - 1, { align: "end" });
+    }
+  }, [filtered.length, autoScroll, rowVirtualizer]);
 
   const toggleFilter = (level: LogLevel) => {
     setActiveFilters((prev) =>
@@ -167,26 +183,48 @@ export default function LogsPage() {
         )}
       </div>
 
-      {/* Log entries */}
+      {/* Log entries (virtualized) */}
       <div className="rounded-card border border-[var(--border-default)] bg-[#1A1A1A] p-4 shadow-card">
-        <div className="max-h-[600px] space-y-0.5 overflow-y-auto font-mono text-xs">
-          {filtered.map((log) => (
-            <div
-              key={log.id}
-              className="flex gap-3 rounded px-2 py-1 hover:bg-white/5 transition-colors"
-            >
-              <span className="shrink-0 text-gray-500">
-                {formatTimestamp(log.timestamp)}
-              </span>
-              <span className={`shrink-0 w-16 text-right ${levelColors[log.level]}`}>
-                [{log.level.toUpperCase()}]
-              </span>
-              <span className="shrink-0 text-gray-400">
-                [{log.source}]
-              </span>
-              <span className="text-gray-200">{log.message}</span>
-            </div>
-          ))}
+        <div
+          ref={scrollRef}
+          className="max-h-[600px] overflow-y-auto font-mono text-xs"
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const log = filtered[virtualRow.index];
+              return (
+                <div
+                  key={log.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="flex gap-3 rounded px-2 py-1 hover:bg-white/5 transition-colors"
+                >
+                  <span className="shrink-0 text-gray-500">
+                    {formatTimestamp(log.timestamp)}
+                  </span>
+                  <span className={`shrink-0 w-16 text-right ${levelColors[log.level]}`}>
+                    [{log.level.toUpperCase()}]
+                  </span>
+                  <span className="shrink-0 text-gray-400">
+                    [{log.source}]
+                  </span>
+                  <span className="text-gray-200">{log.message}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

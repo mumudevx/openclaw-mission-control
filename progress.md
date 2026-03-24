@@ -41,3 +41,23 @@
 - [x] Cron create/edit modal - form with cron expression builder
 - [x] Calendar event create/edit sheet - form with type, date/time, all-day toggle, description
 - [x] HTML5 Canvas pixel office - animated canvas with desks, agents, status indicators
+
+## Phase 5: Gateway Integration & Auth
+- [x] Gateway WebSocket client - RPC protocol, authentication, centralized protocol version
+- [x] Gateway response wrapper types - typed RPC responses for all endpoints
+- [x] TanStack Query hooks for gateway - useAgents, useSessions, useCronJobs, useDashboard with real data
+- [x] Authentication system - JWT sessions, login/logout API routes, credentials & hash libs
+- [x] Login page - standalone auth page without app shell chrome
+- [x] Setup wizard - 5-step first-time configuration (welcome, connection, auth/admin account, test, complete)
+- [x] Setup guard - redirects to wizard when gateway not configured, waits for Zustand hydration
+- [x] Proxy (middleware) - Next.js 16 compatible proxy.ts for auth route protection
+- [x] Admin account creation step skip - auto-skips when admin user already exists
+- [x] Skills management page (/skills) - agent skills listing
+- [x] Real-time agent chat - chat via gateway RPC in agent detail view
+- [x] Logs page gateway integration - LogsTailResponse wrapper type
+
+## Phase 6: Advanced Features & Integrations
+- [x] Agent detail page (/agents/[agentId]) - 6-tab full page route (Overview, Chat, Sessions, Skills, Files, Cron Jobs)
+- [x] Cross-feature calendar sync - auto-sync cron jobs and task deadlines to calendar (one-way)
+- [x] Calendar cross-navigation - click synced events to navigate to source cron/task page
+- [x] Logs virtualization - @tanstack/react-virtual for 1000+ entry performance

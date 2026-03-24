@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ function getHeaderTitle(view: View, date: Date): string {
 }
 
 export default function CalendarPage() {
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>("month");
   const [addEventOpen, setAddEventOpen] = useState(false);
@@ -61,6 +63,17 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event: CalendarEvent) => {
+    // Cross-navigate for synced events
+    if (event.relatedId) {
+      if (event.type === "cron") {
+        router.push("/cron");
+        return;
+      }
+      if (event.type === "task_deadline") {
+        router.push("/tasks");
+        return;
+      }
+    }
     setEditEvent(event);
   };
 
@@ -71,8 +84,13 @@ export default function CalendarPage() {
 
   const confirmDelete = () => {
     if (deleteEvent) {
+      const isSynced = !!deleteEvent.relatedId;
       removeEvent(deleteEvent.id);
-      toast.success("Event deleted");
+      if (isSynced) {
+        toast.success("Event removed from calendar. The source cron job/task is not affected.");
+      } else {
+        toast.success("Event deleted");
+      }
       setDeleteEvent(null);
     }
   };

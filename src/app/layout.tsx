@@ -7,6 +7,7 @@ import { GatewayProvider } from "@/components/providers/gateway-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SetupGuard } from "@/components/providers/setup-guard";
+import { CalendarSyncProvider } from "@/components/providers/calendar-sync-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -40,7 +41,9 @@ export default function RootLayout({
             <ThemeProvider>
               <TooltipProvider>
                 <SetupGuard>
-                  <AppShell>{children}</AppShell>
+                  <CalendarSyncProvider>
+                    <AppShell>{children}</AppShell>
+                  </CalendarSyncProvider>
                 </SetupGuard>
                 <Toaster />
               </TooltipProvider>
