@@ -45,9 +45,11 @@ function extractText(content: unknown): string {
   return '';
 }
 
-export function useChat(agentId: string) {
+export function useChat(agentId: string, overrideSessionKey?: string | null) {
   const { connectionState } = useGateway();
-  const sessionKey = `agent:${agentId}:dashboard:mc`;
+  const defaultSessionKey = `agent:${agentId}:dashboard:mc`;
+  const sessionKey = overrideSessionKey ?? defaultSessionKey;
+  const isReadOnly = overrideSessionKey != null;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamText, setStreamText] = useState<string | null>(null);
@@ -55,12 +57,16 @@ export function useChat(agentId: string) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runIdRef = useRef<string | null>(null);
-  const historyLoadedRef = useRef(false);
+  const lastLoadedKeyRef = useRef<string | null>(null);
 
-  // Load chat history on mount
+  // Load chat history on mount or when sessionKey changes
   useEffect(() => {
-    if (connectionState !== 'connected' || historyLoadedRef.current) return;
+    if (connectionState !== 'connected') return;
+    if (lastLoadedKeyRef.current === sessionKey) return;
 
+    setMessages([]);
+    setStreamText(null);
+    setError(null);
     setIsLoading(true);
     gateway
       .rpc<{ sessionKey: string; limit: number }, ChatHistoryResponse>('chat.history', {
@@ -74,10 +80,11 @@ export function useChat(agentId: string) {
           timestamp: m.timestamp ?? Date.now(),
         }));
         setMessages(msgs);
-        historyLoadedRef.current = true;
+        lastLoadedKeyRef.current = sessionKey;
       })
       .catch(() => {
         // Session might not exist yet — that's fine
+        lastLoadedKeyRef.current = sessionKey;
       })
       .finally(() => setIsLoading(false));
   }, [connectionState, sessionKey]);
@@ -176,8 +183,10 @@ export function useChat(agentId: string) {
     streamText,
     isLoading,
     isSending,
+    isReadOnly,
     error,
     sendMessage,
     abort,
+    sessionKey,
   };
 }

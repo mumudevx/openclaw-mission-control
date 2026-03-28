@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback } from "react";
+import { use, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -59,6 +59,17 @@ export default function AgentDetailPage({
   const { agent, isLoading, refetch } = useAgent(agentId);
   const deleteMutation = useDeleteAgent();
   const { removeAgent } = useAgentStore();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedSessionKey, setSelectedSessionKey] = useState<string | null>(null);
+
+  const handleSelectSession = useCallback((sessionKey: string) => {
+    setSelectedSessionKey(sessionKey);
+    setActiveTab("chat");
+  }, []);
+
+  const handleClearSessionSelection = useCallback(() => {
+    setSelectedSessionKey(null);
+  }, []);
 
   const handlePresenceEvent = useCallback(() => {
     refetch();
@@ -152,7 +163,7 @@ export default function AgentDetailPage({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList variant="line" className="mb-5">
           <TabsTrigger value="overview" className="gap-1.5">
             <LayoutDashboard className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -181,13 +192,18 @@ export default function AgentDetailPage({
         </TabsList>
 
         <TabsContent value="overview">
-          <AgentOverview agent={agent} />
+          <AgentOverview agent={agent} onSelectSession={handleSelectSession} />
         </TabsContent>
         <TabsContent value="chat" className="min-h-[500px]">
-          <AgentChat key={agent.id} agent={agent} />
+          <AgentChat
+            key={`${agent.id}-${selectedSessionKey ?? 'default'}`}
+            agent={agent}
+            selectedSessionKey={selectedSessionKey}
+            onClearSession={handleClearSessionSelection}
+          />
         </TabsContent>
         <TabsContent value="sessions">
-          <AgentSessions agent={agent} />
+          <AgentSessions agent={agent} onSelectSession={handleSelectSession} />
         </TabsContent>
         <TabsContent value="skills">
           <AgentSkills agent={agent} />

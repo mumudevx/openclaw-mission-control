@@ -1,11 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Square, Loader2, WifiOff } from "lucide-react";
+import { Send, Square, Loader2, WifiOff, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
 import { useGateway } from "@/components/providers/gateway-provider";
 import type { Agent } from "@/types";
+
+interface AgentChatProps {
+  agent: Agent;
+  selectedSessionKey?: string | null;
+  onClearSession?: () => void;
+}
 
 function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
@@ -62,9 +68,9 @@ function StreamBubble({ text, agentName }: { text: string; agentName: string }) 
   );
 }
 
-export function AgentChat({ agent }: { agent: Agent }) {
+export function AgentChat({ agent, selectedSessionKey, onClearSession }: AgentChatProps) {
   const { connectionState } = useGateway();
-  const { messages, streamText, isLoading, isSending, error, sendMessage, abort } = useChat(agent.id);
+  const { messages, streamText, isLoading, isSending, isReadOnly, error, sendMessage, abort, sessionKey } = useChat(agent.id, selectedSessionKey);
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -107,6 +113,26 @@ export function AgentChat({ agent }: { agent: Agent }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Session header when viewing a past session */}
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border-divider)] bg-[var(--surface-bg)]">
+          <button
+            onClick={onClearSession}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--content-muted)] hover:bg-white transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-[var(--content-secondary)]">
+              Viewing session history
+            </p>
+            <p className="text-[11px] text-[var(--content-muted)] font-mono truncate">
+              {sessionKey}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Message area */}
       <div className="flex-1 overflow-y-auto space-y-3 py-4">
         {isLoading && (
@@ -118,10 +144,12 @@ export function AgentChat({ agent }: { agent: Agent }) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-2">
               <p className="text-sm text-[var(--content-muted)]">
-                Send a message to start a conversation with {agent.name}
+                {isReadOnly
+                  ? "No messages found in this session"
+                  : `Send a message to start a conversation with ${agent.name}`}
               </p>
-              <p className="text-[11px] text-[var(--content-muted)]">
-                Session: agent:{agent.id}:dashboard:mc
+              <p className="text-[11px] text-[var(--content-muted)] font-mono">
+                {sessionKey}
               </p>
             </div>
           </div>
@@ -144,7 +172,19 @@ export function AgentChat({ agent }: { agent: Agent }) {
 
       {/* Input area */}
       <div className="border-t border-[var(--border-divider)] p-4">
-        {!isConnected ? (
+        {isReadOnly ? (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <p className="text-sm text-[var(--content-muted)]">
+              Viewing past session &mdash;{" "}
+              <button
+                onClick={onClearSession}
+                className="text-[var(--accent-primary)] hover:underline"
+              >
+                back to live chat
+              </button>
+            </p>
+          </div>
+        ) : !isConnected ? (
           <div className="flex items-center justify-center gap-2 py-2 text-sm text-[var(--content-muted)]">
             <WifiOff className="h-4 w-4" strokeWidth={1.5} />
             Gateway disconnected

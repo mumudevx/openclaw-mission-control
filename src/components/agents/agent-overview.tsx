@@ -33,7 +33,7 @@ const sessionStatusVariant: Record<string, "active" | "running" | "error" | "idl
   timeout: "error",
 };
 
-export function AgentOverview({ agent }: { agent: Agent }) {
+export function AgentOverview({ agent, onSelectSession }: { agent: Agent; onSelectSession?: (sessionKey: string) => void }) {
   const { sessions } = useAgentSessions(agent.id);
   const { jobs: cronJobs } = useAgentCronJobs(agent.id);
   const skillsQuery = useAgentSkills(agent.id);
@@ -96,7 +96,7 @@ export function AgentOverview({ agent }: { agent: Agent }) {
         ) : (
           <div className="space-y-2">
             {recentSessions.map((session) => (
-              <SessionRow key={session.key} session={session} />
+              <SessionRow key={session.key} session={session} onSelect={onSelectSession} />
             ))}
           </div>
         )}
@@ -105,12 +105,15 @@ export function AgentOverview({ agent }: { agent: Agent }) {
   );
 }
 
-function SessionRow({ session }: { session: AgentSession }) {
+function SessionRow({ session, onSelect }: { session: AgentSession; onSelect?: (sessionKey: string) => void }) {
   const variant = sessionStatusVariant[session.status ?? ""] ?? "idle";
   const label = session.status ?? "idle";
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3">
+    <div
+      className={`flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3 transition-colors ${onSelect ? "cursor-pointer hover:border-[var(--accent-primary)]/30 hover:bg-[var(--surface-bg)]" : ""}`}
+      onClick={() => onSelect?.(session.key)}
+    >
       <div className="flex items-center gap-3 min-w-0">
         <StatusBadge status={variant} label={label} />
         <div className="min-w-0">
@@ -137,6 +140,9 @@ function SessionRow({ session }: { session: AgentSession }) {
             {formatTokens(session.totalTokens ?? 0)}
           </p>
         </div>
+        {onSelect && (
+          <MessageSquare className="h-4 w-4 text-[var(--content-muted)]" strokeWidth={1.5} />
+        )}
       </div>
     </div>
   );
