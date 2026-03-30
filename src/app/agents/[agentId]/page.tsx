@@ -82,7 +82,7 @@ export default function AgentDetailPage({
     if (!agent) return;
     removeAgent(agent.id);
     deleteMutation.mutate(
-      { id: agent.id },
+      { agentId: agent.id },
       {
         onSuccess: () => {
           toast.success("Agent deleted");

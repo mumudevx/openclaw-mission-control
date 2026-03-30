@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import { gateway } from "@/lib/gateway";
@@ -64,8 +65,13 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     doConnect();
   }, [doConnect]);
 
+  const value = useMemo(
+    () => ({ connectionState, serverInfo, reconnect }),
+    [connectionState, serverInfo, reconnect],
+  );
+
   return (
-    <GatewayContext.Provider value={{ connectionState, serverInfo, reconnect }}>
+    <GatewayContext.Provider value={value}>
       {children}
     </GatewayContext.Provider>
   );

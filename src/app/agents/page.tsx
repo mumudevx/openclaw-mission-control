@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bot, Grid3X3, List, Plus, Search, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
@@ -13,9 +14,8 @@ import dynamic from "next/dynamic";
 const AddAgentSheet = dynamic(() => import("@/components/agents/add-agent-sheet").then((m) => m.AddAgentSheet));
 const ConfirmDeleteDialog = dynamic(() => import("@/components/shared/confirm-delete-dialog").then((m) => m.ConfirmDeleteDialog));
 import { SkillsBadge } from "@/components/agents/agent-skills";
-import { useAgentStore } from "@/stores/agentStore";
 import { useAgentsList, useDeleteAgent } from "@/hooks/useAgents";
-import { useGatewayEvent } from "@/hooks/useGatewayEvent";
+import { useAgentLiveSync } from "@/hooks/useAgentLiveSync";
 import type { Agent } from "@/types";
 
 function formatTokens(n: number): string {
@@ -24,7 +24,13 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
-function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
+const AgentCard = React.memo(function AgentCard({
+  agent,
+  onNavigate,
+}: {
+  agent: Agent;
+  onNavigate: (id: string) => void;
+}) {
   const statusMap: Record<string, "active" | "idle" | "offline"> = {
     active: "active",
     idle: "idle",
@@ -32,7 +38,7 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
   };
 
   return (
-    <div onClick={onClick} className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-card transition-shadow hover:shadow-card-hover cursor-pointer">
+    <div onClick={() => onNavigate(agent.id)} className="rounded-card border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-card transition-shadow hover:shadow-card-hover cursor-pointer">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-light)]">
@@ -80,55 +86,66 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
       </div>
     </div>
   );
-}
+});
 
 export default function AgentsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [addAgentOpen, setAddAgentOpen] = useState(false);
   const [deleteAgent, setDeleteAgentState] = useState<Agent | null>(null);
 
-  const { agents: storeAgents, removeAgent } = useAgentStore();
-  const { isLoading, refetch } = useAgentsList();
+  const { agents, isLoading, refetch } = useAgentsList();
   const deleteMutation = useDeleteAgent();
 
-  const agents = storeAgents;
+  // Delta updates from gateway events (invalidate cache instead of full refetch)
+  useAgentLiveSync();
 
-  // Subscribe to real-time events
-  const handlePresenceEvent = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  const handleAgentEvent = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  useGatewayEvent("presence", handlePresenceEvent);
-  useGatewayEvent("agent", handleAgentEvent);
-
-  const filtered = agents.filter(
-    (a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.id.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () => agents.filter(
+      (a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.id.toLowerCase().includes(search.toLowerCase())
+    ),
+    [agents, search],
   );
 
-  const activeCount = agents.filter((a) => a.status === "active").length;
-  const totalSessions = agents.reduce((sum, a) => sum + a.sessionCount, 0);
-  const totalTokens = agents.reduce((sum, a) => sum + a.totalTokens, 0);
+  const stats = useMemo(() => ({
+    activeCount: agents.filter((a) => a.status === "active").length,
+    totalSessions: agents.reduce((sum, a) => sum + a.sessionCount, 0),
+    totalTokens: agents.reduce((sum, a) => sum + a.totalTokens, 0),
+  }), [agents]);
+
+  const navigateToAgent = useCallback((agentId: string) => {
+    router.push(`/agents/${agentId}`);
+  }, [router]);
 
   const confirmDelete = () => {
     if (deleteAgent) {
-      removeAgent(deleteAgent.id);
+      const agentId = deleteAgent.id;
+      setDeleteAgentState(null);
+
+      // Optimistic delete via query cache
+      queryClient.setQueryData(
+        ['gateway', 'agents.list', undefined],
+        (old: unknown) => {
+          if (!old || typeof old !== 'object') return old;
+          const data = old as { agents: Array<{ id: string }>; defaultId?: string };
+          return { ...data, agents: data.agents.filter((a) => a.id !== agentId) };
+        },
+      );
+
       deleteMutation.mutate(
-        { id: deleteAgent.id },
+        { agentId },
         {
+          onSuccess: () => {
+            toast.success("Agent deleted");
+          },
           onError: () => {
             toast.error("Failed to delete agent");
             refetch();
           },
         },
       );
-      toast.success("Agent deleted");
-      setDeleteAgentState(null);
     }
   };
 
@@ -155,9 +172,9 @@ export default function AgentsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Bot} label="Total Agents" value={agents.length} />
-        <StatCard icon={Bot} label="Active" value={activeCount} />
-        <StatCard icon={Bot} label="Sessions" value={totalSessions} />
-        <StatCard icon={Bot} label="Total Tokens" value={formatTokens(totalTokens)} />
+        <StatCard icon={Bot} label="Active" value={stats.activeCount} />
+        <StatCard icon={Bot} label="Sessions" value={stats.totalSessions} />
+        <StatCard icon={Bot} label="Total Tokens" value={formatTokens(stats.totalTokens)} />
       </div>
 
       {/* Toolbar */}
@@ -190,7 +207,7 @@ export default function AgentsPage() {
       {/* Agent grid */}
       <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
         {filtered.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} onClick={() => router.push(`/agents/${agent.id}`)} />
+          <AgentCard key={agent.id} agent={agent} onNavigate={navigateToAgent} />
         ))}
       </div>
 

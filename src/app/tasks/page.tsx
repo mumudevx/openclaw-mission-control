@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -278,6 +278,42 @@ export default function TasksPage() {
     }
   };
 
+  const boardRef = useRef<HTMLDivElement>(null);
+  const dragScrollState = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
+
+  const handleBoardPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // Only initiate drag-scroll on direct board/empty-area clicks (not on cards)
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-column]') && !target.hasAttribute('data-column')) return;
+
+    const board = boardRef.current;
+    if (!board) return;
+
+    dragScrollState.current = {
+      isDown: true,
+      startX: e.pageX - board.offsetLeft,
+      scrollLeft: board.scrollLeft,
+    };
+    board.style.cursor = 'grabbing';
+  }, []);
+
+  const handleBoardPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragScrollState.current.isDown) return;
+    const board = boardRef.current;
+    if (!board) return;
+
+    e.preventDefault();
+    const x = e.pageX - board.offsetLeft;
+    const walk = (x - dragScrollState.current.startX) * 1.5;
+    board.scrollLeft = dragScrollState.current.scrollLeft - walk;
+  }, []);
+
+  const handleBoardPointerUp = useCallback(() => {
+    dragScrollState.current.isDown = false;
+    const board = boardRef.current;
+    if (board) board.style.cursor = '';
+  }, []);
+
   return (
     <div className="space-y-6">
       <PageHeader title="Tasks" description="Manage tasks with drag & drop Kanban board">
@@ -315,7 +351,14 @@ export default function TasksPage() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div
+          ref={boardRef}
+          className="flex gap-4 overflow-x-auto pb-4 scrollbar-none select-none"
+          onPointerDown={handleBoardPointerDown}
+          onPointerMove={handleBoardPointerMove}
+          onPointerUp={handleBoardPointerUp}
+          onPointerLeave={handleBoardPointerUp}
+        >
           {columns.map((column) => {
             const columnTasks = filteredTasks.filter(
               (t) => t.status === column.id

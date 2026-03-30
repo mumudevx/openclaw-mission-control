@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Loader2, Sparkles, ExternalLink, AlertTriangle, Check, X } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useAgentSkills } from "@/hooks/useAgents";
@@ -175,7 +176,7 @@ function SkillCard({ skill }: { skill: SkillStatusEntry }) {
 }
 
 /** Compact skills badge for agent cards — shows count with styled tooltip */
-export function SkillsBadge({ agentId }: { agentId: string }) {
+export const SkillsBadge = React.memo(function SkillsBadge({ agentId }: { agentId: string }) {
   const { data } = useAgentSkills(agentId);
   const skills = data?.skills ?? [];
   const active = skills.filter((s) => !s.disabled && !s.blockedByAllowlist && s.eligible);
@@ -214,4 +215,4 @@ export function SkillsBadge({ agentId }: { agentId: string }) {
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
